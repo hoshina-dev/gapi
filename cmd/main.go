@@ -10,11 +10,9 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	"github.com/hoshina-dev/gapi/graph"
+	"github.com/hoshina-dev/gapi/internal/adapters/graph"
 	"github.com/vektah/gqlparser/v2/ast"
 )
-
-const defaultPort = "8080"
 
 func main() {
 	app := fiber.New()

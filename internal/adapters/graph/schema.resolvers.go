@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hoshina-dev/gapi/graph/model"
+	"github.com/hoshina-dev/gapi/internal/adapters/graph/model"
 )
 
 // CreateTodo is the resolver for the createTodo field.

@@ -14,7 +14,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/hoshina-dev/gapi/graph/model"
+	"github.com/hoshina-dev/gapi/internal/adapters/graph/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -279,7 +279,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_createTodo_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNNewTodo2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐNewTodo)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNNewTodo2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐNewTodo)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (ec *executionContext) _Mutation_createTodo(ctx context.Context, field grap
 			return ec.resolvers.Mutation().CreateTodo(ctx, fc.Args["input"].(model.NewTodo))
 		},
 		nil,
-		ec.marshalNTodo2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐTodo,
+		ec.marshalNTodo2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐTodo,
 		true,
 		true,
 	)
@@ -411,7 +411,7 @@ func (ec *executionContext) _Query_todos(ctx context.Context, field graphql.Coll
 			return ec.resolvers.Query().Todos(ctx)
 		},
 		nil,
-		ec.marshalNTodo2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐTodoᚄ,
+		ec.marshalNTodo2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐTodoᚄ,
 		true,
 		true,
 	)
@@ -645,7 +645,7 @@ func (ec *executionContext) _Todo_user(ctx context.Context, field graphql.Collec
 			return obj.User, nil
 		},
 		nil,
-		ec.marshalNUser2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐUser,
+		ec.marshalNUser2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐUser,
 		true,
 		true,
 	)
@@ -2802,7 +2802,7 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNNewTodo2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐNewTodo(ctx context.Context, v any) (model.NewTodo, error) {
+func (ec *executionContext) unmarshalNNewTodo2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐNewTodo(ctx context.Context, v any) (model.NewTodo, error) {
 	res, err := ec.unmarshalInputNewTodo(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -2823,11 +2823,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNTodo2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐTodo(ctx context.Context, sel ast.SelectionSet, v model.Todo) graphql.Marshaler {
+func (ec *executionContext) marshalNTodo2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐTodo(ctx context.Context, sel ast.SelectionSet, v model.Todo) graphql.Marshaler {
 	return ec._Todo(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTodo2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐTodoᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Todo) graphql.Marshaler {
+func (ec *executionContext) marshalNTodo2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐTodoᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Todo) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -2851,7 +2851,7 @@ func (ec *executionContext) marshalNTodo2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋga
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTodo2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐTodo(ctx, sel, v[i])
+			ret[i] = ec.marshalNTodo2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐTodo(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -2871,7 +2871,7 @@ func (ec *executionContext) marshalNTodo2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋga
 	return ret
 }
 
-func (ec *executionContext) marshalNTodo2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐTodo(ctx context.Context, sel ast.SelectionSet, v *model.Todo) graphql.Marshaler {
+func (ec *executionContext) marshalNTodo2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐTodo(ctx context.Context, sel ast.SelectionSet, v *model.Todo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -2881,7 +2881,7 @@ func (ec *executionContext) marshalNTodo2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapi�
 	return ec._Todo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
