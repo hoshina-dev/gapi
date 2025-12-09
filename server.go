@@ -2,14 +2,14 @@ package main
 
 import (
 	"log"
-	"net/http"
-	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/hoshina-dev/gapi/graph"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -17,10 +17,7 @@ import (
 const defaultPort = "8080"
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
+	app := fiber.New()
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
 
@@ -35,9 +32,9 @@ func main() {
 		Cache: lru.New[string](100),
 	})
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	app.Get("/", adaptor.HTTPHandler(playground.Handler("GraphQL playground", "/query")))
+	app.All("/query", adaptor.HTTPHandler(srv))
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Print("connect to http://localhost:8080/ for GraphQL playground")
+	log.Fatal(app.Listen(":8080"))
 }
