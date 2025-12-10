@@ -9,24 +9,34 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hoshina-dev/gapi/internal/adapters/graph/model"
+	"github.com/hoshina-dev/gapi/internal/core/domain"
 )
 
-// CreateTodo is the resolver for the createTodo field.
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+// ID is the resolver for the id field.
+func (r *countryResolver) ID(ctx context.Context, obj *domain.Country) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
 }
 
-// Todos is the resolver for the todos field.
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
+// Geometry is the resolver for the geometry field.
+func (r *countryResolver) Geometry(ctx context.Context, obj *domain.Country) (string, error) {
+	panic(fmt.Errorf("not implemented: Geometry - geometry"))
 }
 
-// Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+// Countries is the resolver for the countries field.
+func (r *queryResolver) Countries(ctx context.Context) ([]*domain.Country, error) {
+	panic(fmt.Errorf("not implemented: Countries - countries"))
+}
+
+// Country is the resolver for the country field.
+func (r *queryResolver) Country(ctx context.Context, id string) (*domain.Country, error) {
+	panic(fmt.Errorf("not implemented: Country - country"))
+}
+
+// Country returns CountryResolver implementation.
+func (r *Resolver) Country() CountryResolver { return &countryResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
-type mutationResolver struct{ *Resolver }
+type countryResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
