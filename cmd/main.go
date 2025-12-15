@@ -2,37 +2,57 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/extension"
-	"github.com/99designs/gqlgen/graphql/handler/lru"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/hoshina-dev/gapi/internal/adapters/graph"
-	"github.com/vektah/gqlparser/v2/ast"
+	"github.com/hoshina-dev/gapi/internal/adapters/infrastructure"
+	"github.com/hoshina-dev/gapi/internal/adapters/repository"
+	"github.com/hoshina-dev/gapi/internal/core/services"
 )
 
 func main() {
+	cfg := infrastructure.LoadConfig()
+
+	db := infrastructure.ConnectDB(cfg.DatabaseURL)
+
+	countryRepo := repository.NewCountryRepository(db)
+	countryService := services.NewCountryService(countryRepo)
+	resolver := graph.NewResolver(countryService)
+
 	app := fiber.New()
+	app.Use(recover.New())
+	app.Use(logger.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: cfg.CorsOrigins,
+		AllowMethods: "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
+		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+	}))
 
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	app.Get("/", graph.PlaygroundHandler())
+	app.All("/query", graph.GraphQLHandler(resolver))
 
-	srv.AddTransport(transport.Options{})
-	srv.AddTransport(transport.GET{})
-	srv.AddTransport(transport.POST{})
+	go func() {
+		if err := app.Listen(":" + cfg.Port); err != nil {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
 
-	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+	log.Printf("Server running on :%s", cfg.Port)
+	log.Printf("Connect to http://localhost:%s/ for GraphQL playground", cfg.Port)
 
-	srv.Use(extension.Introspection{})
-	srv.Use(extension.AutomaticPersistedQuery{
-		Cache: lru.New[string](100),
-	})
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
 
-	app.Get("/", adaptor.HTTPHandler(playground.Handler("GraphQL playground", "/query")))
-	app.All("/query", adaptor.HTTPHandler(srv))
-
-	log.Print("connect to http://localhost:8080/ for GraphQL playground")
-	log.Fatal(app.Listen(":8080"))
+	log.Println("Shutting down server...")
+	if err := app.Shutdown(); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+	log.Println("Server exited")
 }
