@@ -27,8 +27,8 @@ func (c *countryRepository) GetByID(ctx context.Context, id int) (*domain.Countr
 }
 
 // List implements ports.CountryRepository.
-func (c *countryRepository) List(ctx context.Context) ([]domain.Country, error) {
-	var countries []domain.Country
+func (c *countryRepository) List(ctx context.Context) ([]*domain.Country, error) {
+	var countries []*domain.Country
 
 	err := c.db.WithContext(ctx).Raw("SELECT ogc_fid, gid_0, country, ST_AsGeoJSON(geom) AS geom FROM countries").Scan(&countries).Error
 

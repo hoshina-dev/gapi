@@ -16,7 +16,7 @@ func NewCountryService(repo ports.CountryRepository) ports.CountryService {
 }
 
 // GetAll implements [ports.CountryService].
-func (c *countryService) GetAll(ctx context.Context) ([]domain.Country, error) {
+func (c *countryService) GetAll(ctx context.Context) ([]*domain.Country, error) {
 	return c.repo.List(ctx)
 }
 
