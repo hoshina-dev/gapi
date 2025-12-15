@@ -18,7 +18,12 @@ func NewCountryRepository(db *gorm.DB) ports.CountryRepository {
 
 // GetByID implements ports.CountryRepository.
 func (c *countryRepository) GetByID(ctx context.Context, id int) (*domain.Country, error) {
-	panic("unimplemented")
+	var country *domain.Country
+
+	err := c.db.WithContext(ctx).Raw("SELECT ogc_fid, gid_0, country, ST_AsGeoJSON(geom) AS geom FROM countries").First(&country).Error
+
+	return country, err
+
 }
 
 // List implements ports.CountryRepository.
