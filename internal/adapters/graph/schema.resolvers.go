@@ -7,36 +7,43 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 
 	"github.com/hoshina-dev/gapi/internal/core/domain"
 )
 
-// ID is the resolver for the id field.
-func (r *countryResolver) ID(ctx context.Context, obj *domain.Country) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
-}
-
-// Geometry is the resolver for the geometry field.
-func (r *countryResolver) Geometry(ctx context.Context, obj *domain.Country) (string, error) {
-	panic(fmt.Errorf("not implemented: Geometry - geometry"))
-}
-
 // Countries is the resolver for the countries field.
 func (r *queryResolver) Countries(ctx context.Context) ([]*domain.Country, error) {
-	panic(fmt.Errorf("not implemented: Countries - countries"))
+	return r.countryService.GetAll(ctx)
 }
 
 // Country is the resolver for the country field.
 func (r *queryResolver) Country(ctx context.Context, id string) (*domain.Country, error) {
-	panic(fmt.Errorf("not implemented: Country - country"))
+	id_int, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, err
+	}
+	return r.countryService.GetByID(ctx, id_int)
 }
-
-// Country returns CountryResolver implementation.
-func (r *Resolver) Country() CountryResolver { return &countryResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
-type countryResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *countryResolver) ID(ctx context.Context, obj *domain.Country) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+func (r *countryResolver) Geometry(ctx context.Context, obj *domain.Country) (string, error) {
+	panic(fmt.Errorf("not implemented: Geometry - geometry"))
+}
+func (r *Resolver) Country() CountryResolver { return &countryResolver{r} }
+type countryResolver struct{ *Resolver }
+*/
