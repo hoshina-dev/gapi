@@ -38,10 +38,7 @@ type queryResolver struct{ *Resolver }
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
 /*
-	func (r *countryResolver) ID(ctx context.Context, obj *domain.Country) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
-}
-func (r *countryResolver) Geometry(ctx context.Context, obj *domain.Country) (string, error) {
+	func (r *countryResolver) Geometry(ctx context.Context, obj *domain.Country) (string, error) {
 	panic(fmt.Errorf("not implemented: Geometry - geometry"))
 }
 func (r *Resolver) Country() CountryResolver { return &countryResolver{r} }

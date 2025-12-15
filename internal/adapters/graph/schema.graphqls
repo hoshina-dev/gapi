@@ -1,10 +1,10 @@
-scalar JSON
+scalar Map
 
 type Country {
   id: ID!
   name: String!
   isoCode: String!
-  geometry: JSON!
+  geometry: Map!
 }
 
 type Query {

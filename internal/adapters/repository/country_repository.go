@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/hoshina-dev/gapi/internal/adapters/repository/models"
 	"github.com/hoshina-dev/gapi/internal/core/domain"
 	"github.com/hoshina-dev/gapi/internal/core/ports"
 	"gorm.io/gorm"
@@ -18,19 +19,34 @@ func NewCountryRepository(db *gorm.DB) ports.CountryRepository {
 
 // GetByID implements ports.CountryRepository.
 func (c *countryRepository) GetByID(ctx context.Context, id int) (*domain.Country, error) {
-	var country *domain.Country
+	var country *models.Country
 
 	err := c.db.WithContext(ctx).Raw("SELECT ogc_fid, gid_0, country, ST_AsGeoJSON(geom) AS geom FROM countries").First(&country).Error
+	if err != nil {
+		return nil, err
+	}
 
-	return country, err
+	return country.ToDomain()
 
 }
 
 // List implements ports.CountryRepository.
 func (c *countryRepository) List(ctx context.Context) ([]*domain.Country, error) {
-	var countries []*domain.Country
+	var results []*models.Country
 
-	err := c.db.WithContext(ctx).Raw("SELECT ogc_fid, gid_0, country, ST_AsGeoJSON(geom) AS geom FROM countries").Scan(&countries).Error
+	err := c.db.WithContext(ctx).Raw("SELECT ogc_fid, gid_0, country, ST_AsGeoJSON(geom) AS geom FROM countries").Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	countries := make([]*domain.Country, len(results))
+	for i, res := range results {
+		country, err := res.ToDomain()
+		if err != nil {
+			return nil, err
+		}
+		countries[i] = country
+	}
 
 	return countries, err
 }
