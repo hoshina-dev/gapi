@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -34,6 +35,7 @@ func main() {
 		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
 	}))
 
+	app.Get("/health", healthCheck)
 	app.Get("/", graph.PlaygroundHandler())
 	app.All("/query", graph.GraphQLHandler(resolver))
 
@@ -55,4 +57,8 @@ func main() {
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 	log.Println("Server exited")
+}
+
+func healthCheck(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"status": "ok", "time": time.Now()})
 }
