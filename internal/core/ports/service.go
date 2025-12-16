@@ -9,4 +9,5 @@ import (
 type CountryService interface {
 	GetAll(ctx context.Context) ([]*domain.Country, error)
 	GetByID(ctx context.Context, id int) (*domain.Country, error)
+	GetByCode(ctx context.Context, code string) (*domain.Country, error)
 }

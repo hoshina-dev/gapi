@@ -4,7 +4,7 @@
 
 # Quickstart
 ```bash
-make install # or go mod install
+make install # or go mod download
 make # or go run cmd/main.go
 ```
 

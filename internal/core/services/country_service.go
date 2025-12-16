@@ -24,3 +24,8 @@ func (c *countryService) GetAll(ctx context.Context) ([]*domain.Country, error) 
 func (c *countryService) GetByID(ctx context.Context, id int) (*domain.Country, error) {
 	return c.repo.GetByID(ctx, id)
 }
+
+// GetByCode implements [ports.CountryService].
+func (c *countryService) GetByCode(ctx context.Context, code string) (*domain.Country, error) {
+	return c.repo.GetByCode(ctx, code)
+}

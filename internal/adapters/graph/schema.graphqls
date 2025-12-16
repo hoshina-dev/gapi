@@ -10,4 +10,5 @@ type Country {
 type Query {
   countries: [Country!]!
   country(id: ID!): Country
+  countryByCode(code: String!): Country
 }
