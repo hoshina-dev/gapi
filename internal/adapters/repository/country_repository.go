@@ -19,10 +19,10 @@ func NewCountryRepository(db *gorm.DB) ports.CountryRepository {
 
 // GetByID implements ports.CountryRepository.
 func (c *countryRepository) GetByID(ctx context.Context, id int) (*domain.Country, error) {
-	var country *models.Country
+	var country *models.AdminArea
 
-	err := c.db.WithContext(ctx).Table("countries").
-		Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
+	err := c.db.WithContext(ctx).Table("admin_areas").
+		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom").
 		First(&country, id).Error
 	if err != nil {
 		return nil, err
@@ -33,10 +33,11 @@ func (c *countryRepository) GetByID(ctx context.Context, id int) (*domain.Countr
 
 // List implements ports.CountryRepository.
 func (c *countryRepository) List(ctx context.Context) ([]*domain.Country, error) {
-	var results []*models.Country
+	var results []*models.AdminArea
 
-	err := c.db.WithContext(ctx).Table("countries").
-		Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").Scan(&results).Error
+	err := c.db.WithContext(ctx).Table("admin_areas").
+		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom").
+		Scan(&results).Error
 	if err != nil {
 		return nil, err
 	}
@@ -55,10 +56,10 @@ func (c *countryRepository) List(ctx context.Context) ([]*domain.Country, error)
 
 // GetByCode implements [ports.CountryRepository].
 func (c *countryRepository) GetByCode(ctx context.Context, code string) (*domain.Country, error) {
-	var country *models.Country
+	var country *models.AdminArea
 
-	err := c.db.WithContext(ctx).Table("countries").
-		Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
+	err := c.db.WithContext(ctx).Table("admin_areas").
+		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom").
 		Where("gid_0 = ?", code).First(&country).Error
 	if err != nil {
 		return nil, err
