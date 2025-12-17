@@ -17,7 +17,8 @@ func NewCountryService(repo ports.CountryRepository) ports.CountryService {
 
 // GetAll implements [ports.CountryService].
 func (c *countryService) GetAll(ctx context.Context) ([]*domain.Country, error) {
-	return c.repo.List(ctx)
+	admin_level := 0
+	return c.repo.List(ctx, &admin_level)
 }
 
 // GetByID implements [ports.CountryService].
@@ -27,5 +28,5 @@ func (c *countryService) GetByID(ctx context.Context, id int) (*domain.Country, 
 
 // GetByCode implements [ports.CountryService].
 func (c *countryService) GetByCode(ctx context.Context, code string) (*domain.Country, error) {
-	return c.repo.GetByCode(ctx, code)
+	return c.repo.GetByCode(ctx, code, 1)
 }

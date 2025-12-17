@@ -32,12 +32,16 @@ func (c *countryRepository) GetByID(ctx context.Context, id int) (*domain.Countr
 }
 
 // List implements ports.CountryRepository.
-func (c *countryRepository) List(ctx context.Context) ([]*domain.Country, error) {
+func (c *countryRepository) List(ctx context.Context, admin_level *int) ([]*domain.Country, error) {
 	var results []*models.AdminArea
+	query := c.db.WithContext(ctx).Table("admin_areas").
+		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom")
 
-	err := c.db.WithContext(ctx).Table("admin_areas").
-		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom").
-		Scan(&results).Error
+	if admin_level != nil {
+		query = query.Where("admin_level = ?", *admin_level)
+	}
+
+	err := query.Order("country").Scan(&results).Error
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +59,12 @@ func (c *countryRepository) List(ctx context.Context) ([]*domain.Country, error)
 }
 
 // GetByCode implements [ports.CountryRepository].
-func (c *countryRepository) GetByCode(ctx context.Context, code string) (*domain.Country, error) {
+func (c *countryRepository) GetByCode(ctx context.Context, code string, admin_level int) (*domain.Country, error) {
 	var country *models.AdminArea
 
 	err := c.db.WithContext(ctx).Table("admin_areas").
 		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom").
-		Where("gid_0 = ?", code).First(&country).Error
+		Where("gid_0 = ? AND admin_level = ?", code, admin_level).First(&country).Error
 	if err != nil {
 		return nil, err
 	}
