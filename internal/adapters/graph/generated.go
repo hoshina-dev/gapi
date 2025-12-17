@@ -46,7 +46,7 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	Country struct {
+	AdminArea struct {
 		Geometry func(childComplexity int) int
 		ID       func(childComplexity int) int
 		ISOCode  func(childComplexity int) int
@@ -54,16 +54,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Countries     func(childComplexity int) int
-		Country       func(childComplexity int, id string) int
-		CountryByCode func(childComplexity int, code string) int
+		AdminArea       func(childComplexity int, id string) int
+		AdminAreaByCode func(childComplexity int, code string) int
+		AdminAreas      func(childComplexity int) int
 	}
 }
 
 type QueryResolver interface {
-	Countries(ctx context.Context) ([]*domain.Country, error)
-	Country(ctx context.Context, id string) (*domain.Country, error)
-	CountryByCode(ctx context.Context, code string) (*domain.Country, error)
+	AdminAreas(ctx context.Context) ([]*domain.AdminArea, error)
+	AdminArea(ctx context.Context, id string) (*domain.AdminArea, error)
+	AdminAreaByCode(ctx context.Context, code string) (*domain.AdminArea, error)
 }
 
 type executableSchema struct {
@@ -85,59 +85,59 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Country.geometry":
-		if e.complexity.Country.Geometry == nil {
+	case "AdminArea.geometry":
+		if e.complexity.AdminArea.Geometry == nil {
 			break
 		}
 
-		return e.complexity.Country.Geometry(childComplexity), true
-	case "Country.id":
-		if e.complexity.Country.ID == nil {
+		return e.complexity.AdminArea.Geometry(childComplexity), true
+	case "AdminArea.id":
+		if e.complexity.AdminArea.ID == nil {
 			break
 		}
 
-		return e.complexity.Country.ID(childComplexity), true
-	case "Country.isoCode":
-		if e.complexity.Country.ISOCode == nil {
+		return e.complexity.AdminArea.ID(childComplexity), true
+	case "AdminArea.isoCode":
+		if e.complexity.AdminArea.ISOCode == nil {
 			break
 		}
 
-		return e.complexity.Country.ISOCode(childComplexity), true
-	case "Country.name":
-		if e.complexity.Country.Name == nil {
+		return e.complexity.AdminArea.ISOCode(childComplexity), true
+	case "AdminArea.name":
+		if e.complexity.AdminArea.Name == nil {
 			break
 		}
 
-		return e.complexity.Country.Name(childComplexity), true
+		return e.complexity.AdminArea.Name(childComplexity), true
 
-	case "Query.countries":
-		if e.complexity.Query.Countries == nil {
+	case "Query.adminArea":
+		if e.complexity.Query.AdminArea == nil {
 			break
 		}
 
-		return e.complexity.Query.Countries(childComplexity), true
-	case "Query.country":
-		if e.complexity.Query.Country == nil {
-			break
-		}
-
-		args, err := ec.field_Query_country_args(ctx, rawArgs)
+		args, err := ec.field_Query_adminArea_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Country(childComplexity, args["id"].(string)), true
-	case "Query.countryByCode":
-		if e.complexity.Query.CountryByCode == nil {
+		return e.complexity.Query.AdminArea(childComplexity, args["id"].(string)), true
+	case "Query.adminAreaByCode":
+		if e.complexity.Query.AdminAreaByCode == nil {
 			break
 		}
 
-		args, err := ec.field_Query_countryByCode_args(ctx, rawArgs)
+		args, err := ec.field_Query_adminAreaByCode_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.CountryByCode(childComplexity, args["code"].(string)), true
+		return e.complexity.Query.AdminAreaByCode(childComplexity, args["code"].(string)), true
+	case "Query.adminAreas":
+		if e.complexity.Query.AdminAreas == nil {
+			break
+		}
+
+		return e.complexity.Query.AdminAreas(childComplexity), true
 
 	}
 	return 0, false
@@ -258,7 +258,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_countryByCode_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_adminAreaByCode_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "code", ec.unmarshalNString2string)
@@ -269,7 +269,7 @@ func (ec *executionContext) field_Query_countryByCode_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_country_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_adminArea_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
@@ -332,12 +332,12 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Country_id(ctx context.Context, field graphql.CollectedField, obj *domain.Country) (ret graphql.Marshaler) {
+func (ec *executionContext) _AdminArea_id(ctx context.Context, field graphql.CollectedField, obj *domain.AdminArea) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Country_id,
+		ec.fieldContext_AdminArea_id,
 		func(ctx context.Context) (any, error) {
 			return obj.ID, nil
 		},
@@ -348,9 +348,9 @@ func (ec *executionContext) _Country_id(ctx context.Context, field graphql.Colle
 	)
 }
 
-func (ec *executionContext) fieldContext_Country_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AdminArea_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Country",
+		Object:     "AdminArea",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -361,12 +361,12 @@ func (ec *executionContext) fieldContext_Country_id(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Country_name(ctx context.Context, field graphql.CollectedField, obj *domain.Country) (ret graphql.Marshaler) {
+func (ec *executionContext) _AdminArea_name(ctx context.Context, field graphql.CollectedField, obj *domain.AdminArea) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Country_name,
+		ec.fieldContext_AdminArea_name,
 		func(ctx context.Context) (any, error) {
 			return obj.Name, nil
 		},
@@ -377,9 +377,9 @@ func (ec *executionContext) _Country_name(ctx context.Context, field graphql.Col
 	)
 }
 
-func (ec *executionContext) fieldContext_Country_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AdminArea_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Country",
+		Object:     "AdminArea",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -390,12 +390,12 @@ func (ec *executionContext) fieldContext_Country_name(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Country_isoCode(ctx context.Context, field graphql.CollectedField, obj *domain.Country) (ret graphql.Marshaler) {
+func (ec *executionContext) _AdminArea_isoCode(ctx context.Context, field graphql.CollectedField, obj *domain.AdminArea) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Country_isoCode,
+		ec.fieldContext_AdminArea_isoCode,
 		func(ctx context.Context) (any, error) {
 			return obj.ISOCode, nil
 		},
@@ -406,9 +406,9 @@ func (ec *executionContext) _Country_isoCode(ctx context.Context, field graphql.
 	)
 }
 
-func (ec *executionContext) fieldContext_Country_isoCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AdminArea_isoCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Country",
+		Object:     "AdminArea",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -419,12 +419,12 @@ func (ec *executionContext) fieldContext_Country_isoCode(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Country_geometry(ctx context.Context, field graphql.CollectedField, obj *domain.Country) (ret graphql.Marshaler) {
+func (ec *executionContext) _AdminArea_geometry(ctx context.Context, field graphql.CollectedField, obj *domain.AdminArea) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Country_geometry,
+		ec.fieldContext_AdminArea_geometry,
 		func(ctx context.Context) (any, error) {
 			return obj.Geometry, nil
 		},
@@ -435,9 +435,9 @@ func (ec *executionContext) _Country_geometry(ctx context.Context, field graphql
 	)
 }
 
-func (ec *executionContext) fieldContext_Country_geometry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AdminArea_geometry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Country",
+		Object:     "AdminArea",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -448,23 +448,23 @@ func (ec *executionContext) fieldContext_Country_geometry(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_countries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_adminAreas(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_countries,
+		ec.fieldContext_Query_adminAreas,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Countries(ctx)
+			return ec.resolvers.Query().AdminAreas(ctx)
 		},
 		nil,
-		ec.marshalNCountry2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCountryᚄ,
+		ec.marshalNAdminArea2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminAreaᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_countries(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_adminAreas(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -473,38 +473,38 @@ func (ec *executionContext) fieldContext_Query_countries(_ context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Country_id(ctx, field)
+				return ec.fieldContext_AdminArea_id(ctx, field)
 			case "name":
-				return ec.fieldContext_Country_name(ctx, field)
+				return ec.fieldContext_AdminArea_name(ctx, field)
 			case "isoCode":
-				return ec.fieldContext_Country_isoCode(ctx, field)
+				return ec.fieldContext_AdminArea_isoCode(ctx, field)
 			case "geometry":
-				return ec.fieldContext_Country_geometry(ctx, field)
+				return ec.fieldContext_AdminArea_geometry(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Country", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type AdminArea", field.Name)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_country(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_adminArea(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_country,
+		ec.fieldContext_Query_adminArea,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Country(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Query().AdminArea(ctx, fc.Args["id"].(string))
 		},
 		nil,
-		ec.marshalOCountry2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCountry,
+		ec.marshalOAdminArea2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminArea,
 		true,
 		false,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_country(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_adminArea(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -513,15 +513,15 @@ func (ec *executionContext) fieldContext_Query_country(ctx context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Country_id(ctx, field)
+				return ec.fieldContext_AdminArea_id(ctx, field)
 			case "name":
-				return ec.fieldContext_Country_name(ctx, field)
+				return ec.fieldContext_AdminArea_name(ctx, field)
 			case "isoCode":
-				return ec.fieldContext_Country_isoCode(ctx, field)
+				return ec.fieldContext_AdminArea_isoCode(ctx, field)
 			case "geometry":
-				return ec.fieldContext_Country_geometry(ctx, field)
+				return ec.fieldContext_AdminArea_geometry(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Country", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type AdminArea", field.Name)
 		},
 	}
 	defer func() {
@@ -531,31 +531,31 @@ func (ec *executionContext) fieldContext_Query_country(ctx context.Context, fiel
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_country_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_adminArea_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_countryByCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_adminAreaByCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_countryByCode,
+		ec.fieldContext_Query_adminAreaByCode,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().CountryByCode(ctx, fc.Args["code"].(string))
+			return ec.resolvers.Query().AdminAreaByCode(ctx, fc.Args["code"].(string))
 		},
 		nil,
-		ec.marshalOCountry2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCountry,
+		ec.marshalOAdminArea2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminArea,
 		true,
 		false,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_countryByCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_adminAreaByCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -564,15 +564,15 @@ func (ec *executionContext) fieldContext_Query_countryByCode(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Country_id(ctx, field)
+				return ec.fieldContext_AdminArea_id(ctx, field)
 			case "name":
-				return ec.fieldContext_Country_name(ctx, field)
+				return ec.fieldContext_AdminArea_name(ctx, field)
 			case "isoCode":
-				return ec.fieldContext_Country_isoCode(ctx, field)
+				return ec.fieldContext_AdminArea_isoCode(ctx, field)
 			case "geometry":
-				return ec.fieldContext_Country_geometry(ctx, field)
+				return ec.fieldContext_AdminArea_geometry(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Country", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type AdminArea", field.Name)
 		},
 	}
 	defer func() {
@@ -582,7 +582,7 @@ func (ec *executionContext) fieldContext_Query_countryByCode(ctx context.Context
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_countryByCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_adminAreaByCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2151,34 +2151,34 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** object.gotpl ****************************
 
-var countryImplementors = []string{"Country"}
+var adminAreaImplementors = []string{"AdminArea"}
 
-func (ec *executionContext) _Country(ctx context.Context, sel ast.SelectionSet, obj *domain.Country) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, countryImplementors)
+func (ec *executionContext) _AdminArea(ctx context.Context, sel ast.SelectionSet, obj *domain.AdminArea) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, adminAreaImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Country")
+			out.Values[i] = graphql.MarshalString("AdminArea")
 		case "id":
-			out.Values[i] = ec._Country_id(ctx, field, obj)
+			out.Values[i] = ec._AdminArea_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "name":
-			out.Values[i] = ec._Country_name(ctx, field, obj)
+			out.Values[i] = ec._AdminArea_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "isoCode":
-			out.Values[i] = ec._Country_isoCode(ctx, field, obj)
+			out.Values[i] = ec._AdminArea_isoCode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "geometry":
-			out.Values[i] = ec._Country_geometry(ctx, field, obj)
+			out.Values[i] = ec._AdminArea_geometry(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -2224,7 +2224,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "countries":
+		case "adminAreas":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -2233,7 +2233,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_countries(ctx, field)
+				res = ec._Query_adminAreas(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -2246,7 +2246,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "country":
+		case "adminArea":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -2255,7 +2255,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_country(ctx, field)
+				res = ec._Query_adminArea(ctx, field)
 				return res
 			}
 
@@ -2265,7 +2265,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "countryByCode":
+		case "adminAreaByCode":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -2274,7 +2274,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_countryByCode(ctx, field)
+				res = ec._Query_adminAreaByCode(ctx, field)
 				return res
 			}
 
@@ -2650,23 +2650,7 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
-	res, err := graphql.UnmarshalBoolean(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalBoolean(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) marshalNCountry2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCountryᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.Country) graphql.Marshaler {
+func (ec *executionContext) marshalNAdminArea2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminAreaᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.AdminArea) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -2690,7 +2674,7 @@ func (ec *executionContext) marshalNCountry2ᚕᚖgithubᚗcomᚋhoshinaᚑdev�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCountry2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCountry(ctx, sel, v[i])
+			ret[i] = ec.marshalNAdminArea2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminArea(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -2710,14 +2694,30 @@ func (ec *executionContext) marshalNCountry2ᚕᚖgithubᚗcomᚋhoshinaᚑdev�
 	return ret
 }
 
-func (ec *executionContext) marshalNCountry2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCountry(ctx context.Context, sel ast.SelectionSet, v *domain.Country) graphql.Marshaler {
+func (ec *executionContext) marshalNAdminArea2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminArea(ctx context.Context, sel ast.SelectionSet, v *domain.AdminArea) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._Country(ctx, sel, v)
+	return ec._AdminArea(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
+	res, err := graphql.UnmarshalBoolean(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalBoolean(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) unmarshalNID2int(ctx context.Context, v any) (int, error) {
@@ -3043,6 +3043,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) marshalOAdminArea2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminArea(ctx context.Context, sel ast.SelectionSet, v *domain.AdminArea) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AdminArea(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3071,13 +3078,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
-}
-
-func (ec *executionContext) marshalOCountry2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCountry(ctx context.Context, sel ast.SelectionSet, v *domain.Country) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Country(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

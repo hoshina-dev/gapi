@@ -15,17 +15,17 @@ type AdminArea struct {
 	Geometry   []byte `gorm:"column:geom;type:geometry(MultiPolygon,4326)"`
 }
 
-func (a AdminArea) ToDomain() (*domain.Country, error) {
+func (a AdminArea) ToDomain() (*domain.AdminArea, error) {
 	var geom map[string]any
 	if err := json.Unmarshal(a.Geometry, &geom); err != nil {
 		return nil, err
 	}
 
-	country := &domain.Country{
+	adminArea := &domain.AdminArea{
 		ID:       a.ID,
 		Name:     a.Name,
 		ISOCode:  a.ISOCode,
 		Geometry: geom,
 	}
-	return country, nil
+	return adminArea, nil
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/hoshina-dev/gapi/internal/core/domain"
 )
 
-type CountryRepository interface {
-	List(ctx context.Context, admin_level *int) ([]*domain.Country, error)
-	GetByID(ctx context.Context, id int) (*domain.Country, error)
-	GetByCode(ctx context.Context, code string, admin_level int) (*domain.Country, error)
+type AdminAreaRepository interface {
+	List(ctx context.Context, admin_level *int) ([]*domain.AdminArea, error)
+	GetByID(ctx context.Context, id int) (*domain.AdminArea, error)
+	GetByCode(ctx context.Context, code string, admin_level int) (*domain.AdminArea, error)
 }

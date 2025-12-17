@@ -22,8 +22,8 @@ func main() {
 
 	db := infrastructure.ConnectDB(cfg.DatabaseURL)
 
-	countryRepo := repository.NewCountryRepository(db)
-	countryService := services.NewCountryService(countryRepo)
+	countryRepo := repository.NewAdminAreaRepository(db)
+	countryService := services.NewAdminAreaService(countryRepo)
 	resolver := graph.NewResolver(countryService)
 
 	app := fiber.New()

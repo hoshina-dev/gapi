@@ -1,6 +1,6 @@
 scalar Map
 
-type Country {
+type AdminArea {
   id: ID!
   name: String!
   isoCode: String!
@@ -8,7 +8,7 @@ type Country {
 }
 
 type Query {
-  countries: [Country!]!
-  country(id: ID!): Country
-  countryByCode(code: String!): Country
+  adminAreas: [AdminArea!]!
+  adminArea(id: ID!): AdminArea
+  adminAreaByCode(code: String!): AdminArea
 }

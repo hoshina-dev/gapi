@@ -1,6 +1,6 @@
 package domain
 
-type Country struct {
+type AdminArea struct {
 	ID       int            `json:"id"`
 	Name     string         `json:"name"`
 	ISOCode  string         `json:"iso_code"`
