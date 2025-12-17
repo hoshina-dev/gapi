@@ -32,7 +32,7 @@ func (c *adminAreaRepository) GetByID(ctx context.Context, id int) (*domain.Admi
 }
 
 // List implements ports.AdminAreaRepository.
-func (c *adminAreaRepository) List(ctx context.Context, admin_level *int) ([]*domain.AdminArea, error) {
+func (c *adminAreaRepository) List(ctx context.Context, admin_level *int32) ([]*domain.AdminArea, error) {
 	var results []*models.AdminArea
 	query := c.db.WithContext(ctx).Table("admin_areas").
 		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom")
@@ -59,7 +59,7 @@ func (c *adminAreaRepository) List(ctx context.Context, admin_level *int) ([]*do
 }
 
 // GetByCode implements [ports.AdminAreaRepository].
-func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, admin_level int) (*domain.AdminArea, error) {
+func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, admin_level int32) (*domain.AdminArea, error) {
 	var adminArea *models.AdminArea
 
 	err := c.db.WithContext(ctx).Table("admin_areas").

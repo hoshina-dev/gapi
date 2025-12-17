@@ -16,9 +16,8 @@ func NewAdminAreaService(repo ports.AdminAreaRepository) ports.AdminAreaService 
 }
 
 // GetAll implements [ports.AdminAreaService].
-func (c *adminAreaService) GetAll(ctx context.Context) ([]*domain.AdminArea, error) {
-	admin_level := 0
-	return c.repo.List(ctx, &admin_level)
+func (c *adminAreaService) GetAll(ctx context.Context, admin_level *int32) ([]*domain.AdminArea, error) {
+	return c.repo.List(ctx, admin_level)
 }
 
 // GetByID implements [ports.AdminAreaService].
@@ -27,6 +26,6 @@ func (c *adminAreaService) GetByID(ctx context.Context, id int) (*domain.AdminAr
 }
 
 // GetByCode implements [ports.AdminAreaService].
-func (c *adminAreaService) GetByCode(ctx context.Context, code string) (*domain.AdminArea, error) {
-	return c.repo.GetByCode(ctx, code, 1)
+func (c *adminAreaService) GetByCode(ctx context.Context, code string, admin_level int32) (*domain.AdminArea, error) {
+	return c.repo.GetByCode(ctx, code, admin_level)
 }

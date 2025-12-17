@@ -5,10 +5,12 @@ type AdminArea {
   name: String!
   isoCode: String!
   geometry: Map!
+  adminLevel: Int!
+  parentID: ID
 }
 
 type Query {
-  adminAreas: [AdminArea!]!
+  adminAreas(adminLevel: Int): [AdminArea!]!
   adminArea(id: ID!): AdminArea
-  adminAreaByCode(code: String!): AdminArea
+  adminAreaByCode(code: String!, adminLevel: Int!): AdminArea
 }

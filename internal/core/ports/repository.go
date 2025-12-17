@@ -7,7 +7,7 @@ import (
 )
 
 type AdminAreaRepository interface {
-	List(ctx context.Context, admin_level *int) ([]*domain.AdminArea, error)
+	List(ctx context.Context, admin_level *int32) ([]*domain.AdminArea, error)
 	GetByID(ctx context.Context, id int) (*domain.AdminArea, error)
-	GetByCode(ctx context.Context, code string, admin_level int) (*domain.AdminArea, error)
+	GetByCode(ctx context.Context, code string, admin_level int32) (*domain.AdminArea, error)
 }

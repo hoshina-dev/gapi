@@ -13,8 +13,8 @@ import (
 )
 
 // AdminAreas is the resolver for the adminAreas field.
-func (r *queryResolver) AdminAreas(ctx context.Context) ([]*domain.AdminArea, error) {
-	return r.adminAreaService.GetAll(ctx)
+func (r *queryResolver) AdminAreas(ctx context.Context, adminLevel *int32) ([]*domain.AdminArea, error) {
+	return r.adminAreaService.GetAll(ctx, adminLevel)
 }
 
 // AdminArea is the resolver for the adminArea field.
@@ -27,33 +27,11 @@ func (r *queryResolver) AdminArea(ctx context.Context, id string) (*domain.Admin
 }
 
 // AdminAreaByCode is the resolver for the adminAreaByCode field.
-func (r *queryResolver) AdminAreaByCode(ctx context.Context, code string) (*domain.AdminArea, error) {
-	return r.adminAreaService.GetByCode(ctx, code)
+func (r *queryResolver) AdminAreaByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error) {
+	return r.adminAreaService.GetByCode(ctx, code, adminLevel)
 }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *queryResolver) Countries(ctx context.Context) ([]*domain.Country, error) {
-	return r.countryService.GetAll(ctx)
-}
-func (r *queryResolver) Country(ctx context.Context, id string) (*domain.Country, error) {
-	id_int, err := strconv.Atoi(id)
-	if err != nil {
-		return nil, err
-	}
-	return r.countryService.GetByID(ctx, id_int)
-}
-func (r *queryResolver) CountryByCode(ctx context.Context, code string) (*domain.Country, error) {
-	return r.countryService.GetByCode(ctx, code)
-}
-*/
