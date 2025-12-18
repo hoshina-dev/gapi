@@ -19,7 +19,7 @@ func LoadConfig() Config {
 	}
 
 	return Config{
-		DatabaseURL: os.Getenv("DATABASE_URL"),
+		DatabaseURL: os.Getenv("DATA_SOURCE_NAME"),
 		CorsOrigins: os.Getenv("CORS_ORIGINS"),
 		Port:        os.Getenv("PORT"),
 	}
