@@ -7,10 +7,20 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 
 	"github.com/hoshina-dev/gapi/internal/core/domain"
 )
+
+// Geometry is the resolver for the geometry field.
+func (r *adminAreaResolver) Geometry(ctx context.Context, obj *domain.AdminArea) (map[string]any, error) {
+	var geom map[string]any
+	if err := json.Unmarshal(obj.Geometry, &geom); err != nil {
+		return nil, err
+	}
+	return geom, nil
+}
 
 // AdminAreas is the resolver for the adminAreas field.
 func (r *queryResolver) AdminAreas(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error) {
@@ -36,7 +46,11 @@ func (r *queryResolver) ChildrenByCode(ctx context.Context, parentCode string, c
 	return r.adminAreaService.GetChildren(ctx, parentCode, childLevel)
 }
 
+// AdminArea returns AdminAreaResolver implementation.
+func (r *Resolver) AdminArea() AdminAreaResolver { return &adminAreaResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type adminAreaResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

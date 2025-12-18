@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	AdminArea() AdminAreaResolver
 	Query() QueryResolver
 }
 
@@ -63,6 +64,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type AdminAreaResolver interface {
+	Geometry(ctx context.Context, obj *domain.AdminArea) (map[string]any, error)
+}
 type QueryResolver interface {
 	AdminAreas(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error)
 	AdminArea(ctx context.Context, id string, adminLevel int32) (*domain.AdminArea, error)
@@ -495,7 +499,7 @@ func (ec *executionContext) _AdminArea_geometry(ctx context.Context, field graph
 		field,
 		ec.fieldContext_AdminArea_geometry,
 		func(ctx context.Context) (any, error) {
-			return obj.Geometry, nil
+			return ec.resolvers.AdminArea().Geometry(ctx, obj)
 		},
 		nil,
 		ec.marshalNMap2map,
@@ -508,8 +512,8 @@ func (ec *executionContext) fieldContext_AdminArea_geometry(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "AdminArea",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Map does not have child fields")
 		},
@@ -2371,27 +2375,58 @@ func (ec *executionContext) _AdminArea(ctx context.Context, sel ast.SelectionSet
 		case "id":
 			out.Values[i] = ec._AdminArea_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._AdminArea_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "isoCode":
 			out.Values[i] = ec._AdminArea_isoCode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "geometry":
-			out.Values[i] = ec._AdminArea_geometry(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AdminArea_geometry(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "adminLevel":
 			out.Values[i] = ec._AdminArea_adminLevel(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "parentCode":
 			out.Values[i] = ec._AdminArea_parentCode(ctx, field, obj)

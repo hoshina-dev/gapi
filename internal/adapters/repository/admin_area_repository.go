@@ -29,7 +29,7 @@ func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel in
 		if err != nil {
 			return nil, err
 		}
-		return adminArea.ToDomain()
+		return adminArea.ToDomain(), nil
 	case 1:
 		var adminArea *models.AdminArea1
 		err := c.db.WithContext(ctx).Table("admin1").
@@ -38,7 +38,7 @@ func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel in
 		if err != nil {
 			return nil, err
 		}
-		return adminArea.ToDomain()
+		return adminArea.ToDomain(), nil
 	default:
 		return nil, errors.New("invalid admin level")
 	}
@@ -67,7 +67,7 @@ func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminL
 		if err != nil {
 			return nil, err
 		}
-		return adminArea.ToDomain()
+		return adminArea.ToDomain(), nil
 	case 1:
 		var adminArea *models.AdminArea1
 		err := c.db.WithContext(ctx).Table("admin1").
@@ -76,7 +76,7 @@ func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminL
 		if err != nil {
 			return nil, err
 		}
-		return adminArea.ToDomain()
+		return adminArea.ToDomain(), nil
 	default:
 		return nil, errors.New("invalid admin level")
 	}
@@ -97,11 +97,7 @@ func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string
 
 		results := make([]*domain.AdminArea, len(adminAreas))
 		for i, adminArea := range adminAreas {
-			res, err := adminArea.ToDomain()
-			if err != nil {
-				return nil, err
-			}
-			results[i] = res
+			results[i] = adminArea.ToDomain()
 		}
 
 		return results, err
@@ -121,11 +117,7 @@ func (c *adminAreaRepository) listAdmin0(ctx context.Context) ([]*domain.AdminAr
 
 	results := make([]*domain.AdminArea, len(adminAreas))
 	for i, adminArea := range adminAreas {
-		res, err := adminArea.ToDomain()
-		if err != nil {
-			return nil, err
-		}
-		results[i] = res
+		results[i] = adminArea.ToDomain()
 	}
 
 	return results, err
@@ -142,11 +134,7 @@ func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminAr
 
 	results := make([]*domain.AdminArea, len(adminAreas))
 	for i, adminArea := range adminAreas {
-		res, err := adminArea.ToDomain()
-		if err != nil {
-			return nil, err
-		}
-		results[i] = res
+		results[i] = adminArea.ToDomain()
 	}
 
 	return results, err
