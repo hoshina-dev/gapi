@@ -7,7 +7,8 @@ import (
 )
 
 type AdminAreaService interface {
-	GetAll(ctx context.Context, admin_level *int32) ([]*domain.AdminArea, error)
-	GetByID(ctx context.Context, id int) (*domain.AdminArea, error)
-	GetByCode(ctx context.Context, code string, admin_level int32) (*domain.AdminArea, error)
+	GetAll(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error)
+	GetByID(ctx context.Context, id int, adminLevel int32) (*domain.AdminArea, error)
+	GetByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error)
+	GetChildren(ctx context.Context, parentCode string, adminLevel int32) ([]*domain.AdminArea, error)
 }

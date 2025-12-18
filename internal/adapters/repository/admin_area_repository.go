@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hoshina-dev/gapi/internal/adapters/repository/models"
 	"github.com/hoshina-dev/gapi/internal/core/domain"
@@ -18,56 +19,112 @@ func NewAdminAreaRepository(db *gorm.DB) ports.AdminAreaRepository {
 }
 
 // GetByID implements ports.AdminAreaRepository.
-func (c *adminAreaRepository) GetByID(ctx context.Context, id int) (*domain.AdminArea, error) {
-	var adminArea *models.AdminArea
-
-	err := c.db.WithContext(ctx).Table("admin_areas").
-		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom").
-		First(&adminArea, id).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return adminArea.ToDomain()
-}
-
-// List implements ports.AdminAreaRepository.
-func (c *adminAreaRepository) List(ctx context.Context, admin_level *int32) ([]*domain.AdminArea, error) {
-	var results []*models.AdminArea
-	query := c.db.WithContext(ctx).Table("admin_areas").
-		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom")
-
-	if admin_level != nil {
-		query = query.Where("admin_level = ?", *admin_level)
-	}
-
-	err := query.Order("country").Scan(&results).Error
-	if err != nil {
-		return nil, err
-	}
-
-	countries := make([]*domain.AdminArea, len(results))
-	for i, res := range results {
-		adminArea, err := res.ToDomain()
+func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel int32) (*domain.AdminArea, error) {
+	switch adminLevel {
+	case 0:
+		var adminArea *models.AdminArea0
+		err := c.db.WithContext(ctx).Table("admin0").
+			Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
+			First(&adminArea, id).Error
 		if err != nil {
 			return nil, err
 		}
-		countries[i] = adminArea
+		return adminArea.ToDomain()
+	case 1:
+		var adminArea *models.AdminArea1
+		err := c.db.WithContext(ctx).Table("admin1").
+			Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
+			First(&adminArea, id).Error
+		if err != nil {
+			return nil, err
+		}
+		return adminArea.ToDomain()
+	default:
+		return nil, errors.New("invalid admin level")
 	}
+}
 
-	return countries, err
+// List implements ports.AdminAreaRepository.
+func (c *adminAreaRepository) List(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error) {
+	switch adminLevel {
+	case 0:
+		return c.listAdmin0(ctx)
+	case 1:
+		return c.listAdmin1(ctx)
+	default:
+		return nil, errors.New("invalid admin level")
+	}
 }
 
 // GetByCode implements [ports.AdminAreaRepository].
-func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, admin_level int32) (*domain.AdminArea, error) {
-	var adminArea *models.AdminArea
+func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error) {
+	switch adminLevel {
+	case 0:
+		var adminArea *models.AdminArea0
+		err := c.db.WithContext(ctx).Table("admin0").
+			Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
+			Where("gid_0 = ?", code).First(&adminArea).Error
+		if err != nil {
+			return nil, err
+		}
+		return adminArea.ToDomain()
+	case 1:
+		var adminArea *models.AdminArea1
+		err := c.db.WithContext(ctx).Table("admin1").
+			Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
+			Where("gid_1 = ?", code).First(&adminArea).Error
+		if err != nil {
+			return nil, err
+		}
+		return adminArea.ToDomain()
+	default:
+		return nil, errors.New("invalid admin level")
+	}
+}
 
-	err := c.db.WithContext(ctx).Table("admin_areas").
-		Select("ogc_fid", "gid_0", "country", "admin_level", "parent_id", "ST_AsGeoJSON(geom) AS geom").
-		Where("gid_0 = ? AND admin_level = ?", code, admin_level).First(&adminArea).Error
+// GetChildren implements [ports.AdminAreaRepository].
+func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string, child_level int32) ([]*domain.AdminArea, error) {
+	panic("unimplemented")
+}
+
+func (c *adminAreaRepository) listAdmin0(ctx context.Context) ([]*domain.AdminArea, error) {
+	var adminAreas []models.AdminArea0
+	err := c.db.WithContext(ctx).Table("admin0").
+		Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
+		Order("country").Scan(&adminAreas).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return adminArea.ToDomain()
+	results := make([]*domain.AdminArea, len(adminAreas))
+	for i, adminArea := range adminAreas {
+		res, err := adminArea.ToDomain()
+		if err != nil {
+			return nil, err
+		}
+		results[i] = res
+	}
+
+	return results, err
+}
+
+func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminArea, error) {
+	var adminAreas []models.AdminArea1
+	err := c.db.WithContext(ctx).Table("admin1").
+		Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
+		Order("country").Scan(&adminAreas).Error
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*domain.AdminArea, len(adminAreas))
+	for i, adminArea := range adminAreas {
+		res, err := adminArea.ToDomain()
+		if err != nil {
+			return nil, err
+		}
+		results[i] = res
+	}
+
+	return results, err
 }

@@ -14,7 +14,7 @@ import (
 )
 
 // AdminAreas is the resolver for the adminAreas field.
-func (r *queryResolver) AdminAreas(ctx context.Context, adminLevel *int32) ([]*domain.AdminArea, error) {
+func (r *queryResolver) AdminAreas(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error) {
 	return r.adminAreaService.GetAll(ctx, adminLevel)
 }
 
@@ -24,7 +24,7 @@ func (r *queryResolver) AdminArea(ctx context.Context, id string, adminLevel int
 	if err != nil {
 		return nil, err
 	}
-	return r.adminAreaService.GetByID(ctx, id_int)
+	return r.adminAreaService.GetByID(ctx, id_int, adminLevel)
 }
 
 // AdminAreaByCode is the resolver for the adminAreaByCode field.

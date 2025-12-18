@@ -53,19 +53,18 @@ type ComplexityRoot struct {
 		ISOCode    func(childComplexity int) int
 		Name       func(childComplexity int) int
 		ParentCode func(childComplexity int) int
-		ParentID   func(childComplexity int) int
 	}
 
 	Query struct {
 		AdminArea       func(childComplexity int, id string, adminLevel int32) int
 		AdminAreaByCode func(childComplexity int, code string, adminLevel int32) int
-		AdminAreas      func(childComplexity int, adminLevel *int32) int
+		AdminAreas      func(childComplexity int, adminLevel int32) int
 		ChildrenByCode  func(childComplexity int, parentCode string, childLevel int32) int
 	}
 }
 
 type QueryResolver interface {
-	AdminAreas(ctx context.Context, adminLevel *int32) ([]*domain.AdminArea, error)
+	AdminAreas(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error)
 	AdminArea(ctx context.Context, id string, adminLevel int32) (*domain.AdminArea, error)
 	AdminAreaByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error)
 	ChildrenByCode(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error)
@@ -126,12 +125,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AdminArea.ParentCode(childComplexity), true
-	case "AdminArea.parentID":
-		if e.complexity.AdminArea.ParentID == nil {
-			break
-		}
-
-		return e.complexity.AdminArea.ParentID(childComplexity), true
 
 	case "Query.adminArea":
 		if e.complexity.Query.AdminArea == nil {
@@ -165,7 +158,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.AdminAreas(childComplexity, args["adminLevel"].(*int32)), true
+		return e.complexity.Query.AdminAreas(childComplexity, args["adminLevel"].(int32)), true
 	case "Query.childrenByCode":
 		if e.complexity.Query.ChildrenByCode == nil {
 			break
@@ -332,7 +325,7 @@ func (ec *executionContext) field_Query_adminArea_args(ctx context.Context, rawA
 func (ec *executionContext) field_Query_adminAreas_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "adminLevel", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "adminLevel", ec.unmarshalNInt2int32)
 	if err != nil {
 		return nil, err
 	}
@@ -553,35 +546,6 @@ func (ec *executionContext) fieldContext_AdminArea_adminLevel(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _AdminArea_parentID(ctx context.Context, field graphql.CollectedField, obj *domain.AdminArea) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_AdminArea_parentID,
-		func(ctx context.Context) (any, error) {
-			return obj.ParentID, nil
-		},
-		nil,
-		ec.marshalOID2ᚖint,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_AdminArea_parentID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AdminArea",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AdminArea_parentCode(ctx context.Context, field graphql.CollectedField, obj *domain.AdminArea) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -619,7 +583,7 @@ func (ec *executionContext) _Query_adminAreas(ctx context.Context, field graphql
 		ec.fieldContext_Query_adminAreas,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().AdminAreas(ctx, fc.Args["adminLevel"].(*int32))
+			return ec.resolvers.Query().AdminAreas(ctx, fc.Args["adminLevel"].(int32))
 		},
 		nil,
 		ec.marshalNAdminArea2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminAreaᚄ,
@@ -646,8 +610,6 @@ func (ec *executionContext) fieldContext_Query_adminAreas(ctx context.Context, f
 				return ec.fieldContext_AdminArea_geometry(ctx, field)
 			case "adminLevel":
 				return ec.fieldContext_AdminArea_adminLevel(ctx, field)
-			case "parentID":
-				return ec.fieldContext_AdminArea_parentID(ctx, field)
 			case "parentCode":
 				return ec.fieldContext_AdminArea_parentCode(ctx, field)
 			}
@@ -703,8 +665,6 @@ func (ec *executionContext) fieldContext_Query_adminArea(ctx context.Context, fi
 				return ec.fieldContext_AdminArea_geometry(ctx, field)
 			case "adminLevel":
 				return ec.fieldContext_AdminArea_adminLevel(ctx, field)
-			case "parentID":
-				return ec.fieldContext_AdminArea_parentID(ctx, field)
 			case "parentCode":
 				return ec.fieldContext_AdminArea_parentCode(ctx, field)
 			}
@@ -760,8 +720,6 @@ func (ec *executionContext) fieldContext_Query_adminAreaByCode(ctx context.Conte
 				return ec.fieldContext_AdminArea_geometry(ctx, field)
 			case "adminLevel":
 				return ec.fieldContext_AdminArea_adminLevel(ctx, field)
-			case "parentID":
-				return ec.fieldContext_AdminArea_parentID(ctx, field)
 			case "parentCode":
 				return ec.fieldContext_AdminArea_parentCode(ctx, field)
 			}
@@ -817,8 +775,6 @@ func (ec *executionContext) fieldContext_Query_childrenByCode(ctx context.Contex
 				return ec.fieldContext_AdminArea_geometry(ctx, field)
 			case "adminLevel":
 				return ec.fieldContext_AdminArea_adminLevel(ctx, field)
-			case "parentID":
-				return ec.fieldContext_AdminArea_parentID(ctx, field)
 			case "parentCode":
 				return ec.fieldContext_AdminArea_parentCode(ctx, field)
 			}
@@ -2437,8 +2393,6 @@ func (ec *executionContext) _AdminArea(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "parentID":
-			out.Values[i] = ec._AdminArea_parentID(ctx, field, obj)
 		case "parentCode":
 			out.Values[i] = ec._AdminArea_parentCode(ctx, field, obj)
 		default:
@@ -3374,42 +3328,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = sel
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
-	return res
-}
-
-func (ec *executionContext) unmarshalOID2ᚖint(ctx context.Context, v any) (*int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOID2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	_ = sel
-	_ = ctx
-	res := graphql.MarshalInt(*v)
-	return res
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint32(ctx context.Context, v any) (*int32, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt32(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.SelectionSet, v *int32) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	_ = sel
-	_ = ctx
-	res := graphql.MarshalInt32(*v)
 	return res
 }
 
