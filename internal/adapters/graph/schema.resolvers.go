@@ -7,6 +7,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/hoshina-dev/gapi/internal/core/domain"
@@ -18,7 +19,7 @@ func (r *queryResolver) AdminAreas(ctx context.Context, adminLevel *int32) ([]*d
 }
 
 // AdminArea is the resolver for the adminArea field.
-func (r *queryResolver) AdminArea(ctx context.Context, id string) (*domain.AdminArea, error) {
+func (r *queryResolver) AdminArea(ctx context.Context, id string, adminLevel int32) (*domain.AdminArea, error) {
 	id_int, err := strconv.Atoi(id)
 	if err != nil {
 		return nil, err
@@ -29,6 +30,11 @@ func (r *queryResolver) AdminArea(ctx context.Context, id string) (*domain.Admin
 // AdminAreaByCode is the resolver for the adminAreaByCode field.
 func (r *queryResolver) AdminAreaByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error) {
 	return r.adminAreaService.GetByCode(ctx, code, adminLevel)
+}
+
+// ChildrenByCode is the resolver for the childrenByCode field.
+func (r *queryResolver) ChildrenByCode(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error) {
+	panic(fmt.Errorf("not implemented: ChildrenByCode - childrenByCode"))
 }
 
 // Query returns QueryResolver implementation.

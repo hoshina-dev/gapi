@@ -7,10 +7,12 @@ type AdminArea {
   geometry: Map!
   adminLevel: Int!
   parentID: ID
+  parentCode: String
 }
 
 type Query {
   adminAreas(adminLevel: Int): [AdminArea!]!
-  adminArea(id: ID!): AdminArea
+  adminArea(id: ID!, adminLevel: Int!): AdminArea
   adminAreaByCode(code: String!, adminLevel: Int!): AdminArea
+  childrenByCode(parentCode: String!, childLevel: Int!): [AdminArea!]!
 }
