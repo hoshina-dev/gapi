@@ -7,7 +7,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/hoshina-dev/gapi/internal/core/domain"
@@ -34,7 +33,7 @@ func (r *queryResolver) AdminAreaByCode(ctx context.Context, code string, adminL
 
 // ChildrenByCode is the resolver for the childrenByCode field.
 func (r *queryResolver) ChildrenByCode(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error) {
-	panic(fmt.Errorf("not implemented: ChildrenByCode - childrenByCode"))
+	return r.adminAreaService.GetChildren(ctx, parentCode, childLevel)
 }
 
 // Query returns QueryResolver implementation.

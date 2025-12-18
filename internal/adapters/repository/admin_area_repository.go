@@ -83,8 +83,31 @@ func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminL
 }
 
 // GetChildren implements [ports.AdminAreaRepository].
-func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string, child_level int32) ([]*domain.AdminArea, error) {
-	panic("unimplemented")
+func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error) {
+	switch childLevel {
+	case 1:
+		var adminAreas []models.AdminArea1
+		err := c.db.WithContext(ctx).Table("admin1").
+			Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
+			Where("gid_0 = ?", parentCode).
+			Order("name_1").Scan(&adminAreas).Error
+		if err != nil {
+			return nil, err
+		}
+
+		results := make([]*domain.AdminArea, len(adminAreas))
+		for i, adminArea := range adminAreas {
+			res, err := adminArea.ToDomain()
+			if err != nil {
+				return nil, err
+			}
+			results[i] = res
+		}
+
+		return results, err
+	default:
+		return nil, errors.New("invalid child level")
+	}
 }
 
 func (c *adminAreaRepository) listAdmin0(ctx context.Context) ([]*domain.AdminArea, error) {
@@ -112,7 +135,7 @@ func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminAr
 	var adminAreas []models.AdminArea1
 	err := c.db.WithContext(ctx).Table("admin1").
 		Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
-		Order("country").Scan(&adminAreas).Error
+		Order("name_1").Scan(&adminAreas).Error
 	if err != nil {
 		return nil, err
 	}

@@ -26,11 +26,11 @@ func (c *adminAreaService) GetByID(ctx context.Context, id int, adminLevel int32
 }
 
 // GetByCode implements [ports.AdminAreaService].
-func (c *adminAreaService) GetByCode(ctx context.Context, code string, admin_level int32) (*domain.AdminArea, error) {
-	return c.repo.GetByCode(ctx, code, admin_level)
+func (c *adminAreaService) GetByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error) {
+	return c.repo.GetByCode(ctx, code, adminLevel)
 }
 
 // GetChildren implements [ports.AdminAreaService].
-func (c *adminAreaService) GetChildren(ctx context.Context, parentCode string, adminLevel int32) ([]*domain.AdminArea, error) {
-	panic("unimplemented")
+func (c *adminAreaService) GetChildren(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error) {
+	return c.repo.GetChildren(ctx, parentCode, childLevel)
 }
