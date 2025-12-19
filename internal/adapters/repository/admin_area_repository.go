@@ -22,7 +22,7 @@ func NewAdminAreaRepository(db *gorm.DB) ports.AdminAreaRepository {
 func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel int32) (*domain.AdminArea, error) {
 	switch adminLevel {
 	case 0:
-		var adminArea *models.AdminArea0
+		var adminArea models.AdminArea0
 		err := c.db.WithContext(ctx).Table("admin0").
 			Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
 			First(&adminArea, id).Error
@@ -31,7 +31,7 @@ func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel in
 		}
 		return adminArea.ToDomain(), nil
 	case 1:
-		var adminArea *models.AdminArea1
+		var adminArea models.AdminArea1
 		err := c.db.WithContext(ctx).Table("admin1").
 			Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
 			First(&adminArea, id).Error
@@ -60,7 +60,7 @@ func (c *adminAreaRepository) List(ctx context.Context, adminLevel int32) ([]*do
 func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error) {
 	switch adminLevel {
 	case 0:
-		var adminArea *models.AdminArea0
+		var adminArea models.AdminArea0
 		err := c.db.WithContext(ctx).Table("admin0").
 			Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
 			Where("gid_0 = ?", code).First(&adminArea).Error
@@ -69,7 +69,7 @@ func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminL
 		}
 		return adminArea.ToDomain(), nil
 	case 1:
-		var adminArea *models.AdminArea1
+		var adminArea models.AdminArea1
 		err := c.db.WithContext(ctx).Table("admin1").
 			Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
 			Where("gid_1 = ?", code).First(&adminArea).Error
