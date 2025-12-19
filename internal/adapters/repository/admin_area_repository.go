@@ -107,13 +107,7 @@ func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string
 		if err != nil {
 			return nil, err
 		}
-
-		results := make([]*domain.AdminArea, len(adminAreas))
-		for i, adminArea := range adminAreas {
-			results[i] = adminArea.ToDomain()
-		}
-
-		return results, err
+		return models.MapAdmin1SliceToDomain(adminAreas), nil
 	default:
 		return nil, errors.New("invalid child level")
 	}
@@ -127,13 +121,7 @@ func (c *adminAreaRepository) listAdmin0(ctx context.Context) ([]*domain.AdminAr
 	if err != nil {
 		return nil, err
 	}
-
-	results := make([]*domain.AdminArea, len(adminAreas))
-	for i, adminArea := range adminAreas {
-		results[i] = adminArea.ToDomain()
-	}
-
-	return results, err
+	return models.MapAdmin0SliceToDomain(adminAreas), nil
 }
 
 func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminArea, error) {
@@ -144,11 +132,5 @@ func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminAr
 	if err != nil {
 		return nil, err
 	}
-
-	results := make([]*domain.AdminArea, len(adminAreas))
-	for i, adminArea := range adminAreas {
-		results[i] = adminArea.ToDomain()
-	}
-
-	return results, err
+	return models.MapAdmin1SliceToDomain(adminAreas), nil
 }

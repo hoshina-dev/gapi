@@ -24,3 +24,19 @@ func (a AdminArea1) ToDomain() *domain.AdminArea {
 		Geometry:   a.Geometry,
 	}
 }
+
+func MapAdmin0SliceToDomain(in []AdminArea0) []*domain.AdminArea {
+	out := make([]*domain.AdminArea, len(in))
+	for i := range in {
+		out[i] = in[i].ToDomain()
+	}
+	return out
+}
+
+func MapAdmin1SliceToDomain(in []AdminArea1) []*domain.AdminArea {
+	out := make([]*domain.AdminArea, len(in))
+	for i := range in {
+		out[i] = in[i].ToDomain()
+	}
+	return out
+}
