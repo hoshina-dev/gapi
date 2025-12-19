@@ -18,23 +18,29 @@ func NewAdminAreaRepository(db *gorm.DB) ports.AdminAreaRepository {
 	return &adminAreaRepository{db: db}
 }
 
+var queries = map[int32]struct{ Table, Select string }{
+	0: {"admin0", "ogc_fid, gid_0, country, ST_AsGeoJSON(geom) AS geom"},
+	1: {"admin1", "ogc_fid, gid_0, gid_1, name_1, ST_AsGeoJSON(geom) AS geom"},
+}
+
 // GetByID implements ports.AdminAreaRepository.
 func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel int32) (*domain.AdminArea, error) {
+	query, ok := queries[adminLevel]
+	if !ok {
+		return nil, errors.New("invalid admin level")
+	}
+
 	switch adminLevel {
 	case 0:
 		var adminArea models.AdminArea0
-		err := c.db.WithContext(ctx).Table("admin0").
-			Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
-			First(&adminArea, id).Error
+		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).First(&adminArea, id).Error
 		if err != nil {
 			return nil, err
 		}
 		return adminArea.ToDomain(), nil
 	case 1:
 		var adminArea models.AdminArea1
-		err := c.db.WithContext(ctx).Table("admin1").
-			Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
-			First(&adminArea, id).Error
+		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).First(&adminArea, id).Error
 		if err != nil {
 			return nil, err
 		}
@@ -58,11 +64,15 @@ func (c *adminAreaRepository) List(ctx context.Context, adminLevel int32) ([]*do
 
 // GetByCode implements [ports.AdminAreaRepository].
 func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error) {
+	query, ok := queries[adminLevel]
+	if !ok {
+		return nil, errors.New("invalid admin level")
+	}
+
 	switch adminLevel {
 	case 0:
 		var adminArea models.AdminArea0
-		err := c.db.WithContext(ctx).Table("admin0").
-			Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
+		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
 			Where("gid_0 = ?", code).First(&adminArea).Error
 		if err != nil {
 			return nil, err
@@ -70,8 +80,7 @@ func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminL
 		return adminArea.ToDomain(), nil
 	case 1:
 		var adminArea models.AdminArea1
-		err := c.db.WithContext(ctx).Table("admin1").
-			Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
+		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
 			Where("gid_1 = ?", code).First(&adminArea).Error
 		if err != nil {
 			return nil, err
@@ -84,11 +93,15 @@ func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminL
 
 // GetChildren implements [ports.AdminAreaRepository].
 func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error) {
+	query, ok := queries[childLevel]
+	if !ok {
+		return nil, errors.New("invalid child level")
+	}
+
 	switch childLevel {
 	case 1:
 		var adminAreas []models.AdminArea1
-		err := c.db.WithContext(ctx).Table("admin1").
-			Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
+		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
 			Where("gid_0 = ?", parentCode).
 			Order("name_1").Scan(&adminAreas).Error
 		if err != nil {
@@ -107,9 +120,9 @@ func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string
 }
 
 func (c *adminAreaRepository) listAdmin0(ctx context.Context) ([]*domain.AdminArea, error) {
+	query := queries[0]
 	var adminAreas []models.AdminArea0
-	err := c.db.WithContext(ctx).Table("admin0").
-		Select("ogc_fid", "gid_0", "country", "ST_AsGeoJSON(geom) AS geom").
+	err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
 		Order("country").Scan(&adminAreas).Error
 	if err != nil {
 		return nil, err
@@ -124,9 +137,9 @@ func (c *adminAreaRepository) listAdmin0(ctx context.Context) ([]*domain.AdminAr
 }
 
 func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminArea, error) {
+	query := queries[1]
 	var adminAreas []models.AdminArea1
-	err := c.db.WithContext(ctx).Table("admin1").
-		Select("ogc_fid", "gid_0", "gid_1", "name_1", "ST_AsGeoJSON(geom) AS geom").
+	err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
 		Order("name_1").Scan(&adminAreas).Error
 	if err != nil {
 		return nil, err
