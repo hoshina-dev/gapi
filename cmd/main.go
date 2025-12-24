@@ -5,13 +5,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/hoshina-dev/gapi/internal/adapters/graph"
+	"github.com/hoshina-dev/gapi/internal/adapters/http"
 	"github.com/hoshina-dev/gapi/internal/adapters/infrastructure"
 	"github.com/hoshina-dev/gapi/internal/adapters/repository"
 	"github.com/hoshina-dev/gapi/internal/core/services"
@@ -26,18 +22,7 @@ func main() {
 	countryService := services.NewAdminAreaService(countryRepo)
 	resolver := graph.NewResolver(countryService)
 
-	app := fiber.New()
-	app.Use(recover.New())
-	app.Use(logger.New())
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: cfg.CorsOrigins,
-		AllowMethods: "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
-		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
-	}))
-
-	app.Get("/health", healthCheck)
-	app.Get("/", graph.PlaygroundHandler())
-	app.All("/query", graph.GraphQLHandler(resolver))
+	app := http.SetupRouter(resolver, cfg)
 
 	go func() {
 		if err := app.Listen(":" + cfg.Port); err != nil {
@@ -57,8 +42,4 @@ func main() {
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 	log.Println("Server exited")
-}
-
-func healthCheck(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"status": "ok", "time": time.Now()})
 }
