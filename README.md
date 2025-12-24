@@ -34,3 +34,8 @@ make format
 ```bash
 make lint # or golangci-lint run ./...
 ```
+
+## Run Test
+```bash
+make test # or go test ./...
+```

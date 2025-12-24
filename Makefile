@@ -4,6 +4,9 @@ install:
 run:
 	go run cmd/main.go
 
+test:
+	go test ./...
+
 deps:
 	go mod tidy
 
