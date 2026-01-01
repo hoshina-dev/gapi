@@ -11,6 +11,7 @@ type Config struct {
 	DatabaseURL string
 	CorsOrigins string
 	Port        string
+	RedisURL    string
 }
 
 func LoadConfig() Config {
@@ -22,5 +23,6 @@ func LoadConfig() Config {
 		DatabaseURL: os.Getenv("DATA_SOURCE_NAME"),
 		CorsOrigins: os.Getenv("CORS_ORIGINS"),
 		Port:        os.Getenv("PORT"),
+		RedisURL:    os.Getenv("REDIS_URL"),
 	}
 }
