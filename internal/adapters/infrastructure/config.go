@@ -22,9 +22,16 @@ func LoadConfig() Config {
 		log.Warnf("Error loading .env file: %v", err)
 	}
 
-	RedisDBInt, err := strconv.Atoi(os.Getenv("REDIS_DB"))
-	if err != nil {
-		log.Warnf("Error loading Redis DB: %v", err)
+	// Default to Redis DB 0 if REDIS_DB is not set or invalid
+	redisDBStr := os.Getenv("REDIS_DB")
+	RedisDBInt := 0
+	if redisDBStr != "" {
+		parsed, err := strconv.Atoi(redisDBStr)
+		if err != nil {
+			log.Warnf("Error parsing REDIS_DB=%q, defaulting to Redis DB 0: %v", redisDBStr, err)
+		} else {
+			RedisDBInt = parsed
+		}
 	}
 
 	return Config{
