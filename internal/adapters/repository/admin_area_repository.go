@@ -27,6 +27,32 @@ var queries = map[int32]struct{ Table, Select string }{
 	1: {"admin1", "ogc_fid, gid_0, gid_1, name_1, ST_AsGeoJSON(geom) AS geom"},
 }
 
+// Helper methods for caching
+func (c *adminAreaRepository) getFromCache(ctx context.Context, cacheKey string, dest interface{}) bool {
+	if c.redisClient == nil {
+		return false
+	}
+	data, err := c.redisClient.Get(ctx, cacheKey).Result()
+	if err != nil {
+		return false
+	}
+	if json.Unmarshal([]byte(data), dest) != nil {
+		return false
+	}
+	return true
+}
+
+func (c *adminAreaRepository) setToCache(ctx context.Context, cacheKey string, value interface{}) {
+	if c.redisClient == nil {
+		return
+	}
+	data, err := json.Marshal(value)
+	if err != nil {
+		return
+	}
+	c.redisClient.Set(ctx, cacheKey, data, 0)
+}
+
 // GetByID implements ports.AdminAreaRepository.
 func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel int32) (*domain.AdminArea, error) {
 	query, ok := queries[adminLevel]
@@ -36,21 +62,12 @@ func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel in
 
 	cacheKey := fmt.Sprintf("admin_area:%d:%d", adminLevel, id)
 
-	// Check cache if Redis is available
-	if c.redisClient != nil {
-		cachedData, err := c.redisClient.Get(ctx, cacheKey).Result()
-		if err == nil {
-			var adminArea domain.AdminArea
-			if json.Unmarshal([]byte(cachedData), &adminArea) == nil {
-				return &adminArea, nil // Cache hit
-			}
-		} else if err != redis.Nil {
-			// Redis error, but continue to DB
-		}
+	var adminArea domain.AdminArea
+	if c.getFromCache(ctx, cacheKey, &adminArea) {
+		return &adminArea, nil
 	}
 
 	// Cache miss or no Redis: fetch from DB
-	var adminArea *domain.AdminArea
 	switch adminLevel {
 	case 0:
 		var model models.AdminArea0
@@ -58,26 +75,20 @@ func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel in
 		if err != nil {
 			return nil, err
 		}
-		adminArea = model.ToDomain()
+		adminArea = *model.ToDomain()
 	case 1:
 		var model models.AdminArea1
 		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).First(&model, id).Error
 		if err != nil {
 			return nil, err
 		}
-		adminArea = model.ToDomain()
+		adminArea = *model.ToDomain()
 	default:
 		return nil, errors.New("invalid admin level")
 	}
 
-	// Store in cache if Redis is available
-	if c.redisClient != nil {
-		if data, marshalErr := json.Marshal(adminArea); marshalErr == nil {
-			c.redisClient.Set(ctx, cacheKey, data, 0) // No TTL, rely on LRU eviction
-		}
-	}
-
-	return adminArea, nil
+	c.setToCache(ctx, cacheKey, &adminArea)
+	return &adminArea, nil
 }
 
 // List implements ports.AdminAreaRepository.
@@ -99,26 +110,37 @@ func (c *adminAreaRepository) GetByCode(ctx context.Context, code string, adminL
 		return nil, errors.New("invalid admin level")
 	}
 
+	cacheKey := fmt.Sprintf("admin_area:code:%d:%s", adminLevel, code)
+
+	var adminArea domain.AdminArea
+	if c.getFromCache(ctx, cacheKey, &adminArea) {
+		return &adminArea, nil
+	}
+
+	// Cache miss or no Redis: fetch from DB
 	switch adminLevel {
 	case 0:
-		var adminArea models.AdminArea0
+		var model models.AdminArea0
 		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
-			Where("gid_0 = ?", code).First(&adminArea).Error
+			Where("gid_0 = ?", code).First(&model).Error
 		if err != nil {
 			return nil, err
 		}
-		return adminArea.ToDomain(), nil
+		adminArea = *model.ToDomain()
 	case 1:
-		var adminArea models.AdminArea1
+		var model models.AdminArea1
 		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
-			Where("gid_1 = ?", code).First(&adminArea).Error
+			Where("gid_1 = ?", code).First(&model).Error
 		if err != nil {
 			return nil, err
 		}
-		return adminArea.ToDomain(), nil
+		adminArea = *model.ToDomain()
 	default:
 		return nil, errors.New("invalid admin level")
 	}
+
+	c.setToCache(ctx, cacheKey, &adminArea)
+	return &adminArea, nil
 }
 
 // GetChildren implements [ports.AdminAreaRepository].
@@ -128,39 +150,72 @@ func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string
 		return nil, errors.New("invalid child level")
 	}
 
+	cacheKey := fmt.Sprintf("admin_area:children:%d:%s", childLevel, parentCode)
+
+	var adminAreas []*domain.AdminArea
+	if c.getFromCache(ctx, cacheKey, &adminAreas) {
+		return adminAreas, nil
+	}
+
+	// Cache miss or no Redis: fetch from DB
 	switch childLevel {
 	case 1:
-		var adminAreas []models.AdminArea1
+		var adminModels []models.AdminArea1
 		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
 			Where("gid_0 = ?", parentCode).
-			Order("name_1").Scan(&adminAreas).Error
+			Order("name_1").Scan(&adminModels).Error
 		if err != nil {
 			return nil, err
 		}
-		return models.MapAdmin1SliceToDomain(adminAreas), nil
+		adminAreas = models.MapAdmin1SliceToDomain(adminModels)
 	default:
 		return nil, errors.New("invalid child level")
 	}
+
+	c.setToCache(ctx, cacheKey, adminAreas)
+	return adminAreas, nil
 }
 
 func (c *adminAreaRepository) listAdmin0(ctx context.Context) ([]*domain.AdminArea, error) {
+	cacheKey := "admin_area:list:0"
+
+	var adminAreas []*domain.AdminArea
+	if c.getFromCache(ctx, cacheKey, &adminAreas) {
+		return adminAreas, nil
+	}
+
+	// Cache miss or no Redis: fetch from DB
 	query := queries[0]
-	var adminAreas []models.AdminArea0
+	var adminModels []models.AdminArea0
 	err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
-		Order("country").Scan(&adminAreas).Error
+		Order("country").Scan(&adminModels).Error
 	if err != nil {
 		return nil, err
 	}
-	return models.MapAdmin0SliceToDomain(adminAreas), nil
+	adminAreas = models.MapAdmin0SliceToDomain(adminModels)
+
+	c.setToCache(ctx, cacheKey, adminAreas)
+	return adminAreas, nil
 }
 
 func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminArea, error) {
+	cacheKey := "admin_area:list:1"
+
+	var adminAreas []*domain.AdminArea
+	if c.getFromCache(ctx, cacheKey, &adminAreas) {
+		return adminAreas, nil
+	}
+
+	// Cache miss or no Redis: fetch from DB
 	query := queries[1]
-	var adminAreas []models.AdminArea1
+	var adminModels []models.AdminArea1
 	err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).
-		Order("name_1").Scan(&adminAreas).Error
+		Order("name_1").Scan(&adminModels).Error
 	if err != nil {
 		return nil, err
 	}
-	return models.MapAdmin1SliceToDomain(adminAreas), nil
+	adminAreas = models.MapAdmin1SliceToDomain(adminModels)
+
+	c.setToCache(ctx, cacheKey, adminAreas)
+	return adminAreas, nil
 }
