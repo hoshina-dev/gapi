@@ -2,20 +2,24 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/hoshina-dev/gapi/internal/adapters/repository/models"
 	"github.com/hoshina-dev/gapi/internal/core/domain"
 	"github.com/hoshina-dev/gapi/internal/core/ports"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type adminAreaRepository struct {
-	db *gorm.DB
+	db          *gorm.DB
+	redisClient *redis.Client
 }
 
-func NewAdminAreaRepository(db *gorm.DB) ports.AdminAreaRepository {
-	return &adminAreaRepository{db: db}
+func NewAdminAreaRepository(db *gorm.DB, redisClient *redis.Client) ports.AdminAreaRepository {
+	return &adminAreaRepository{db: db, redisClient: redisClient}
 }
 
 var queries = map[int32]struct{ Table, Select string }{
@@ -30,24 +34,50 @@ func (c *adminAreaRepository) GetByID(ctx context.Context, id int, adminLevel in
 		return nil, errors.New("invalid admin level")
 	}
 
+	cacheKey := fmt.Sprintf("admin_area:%d:%d", adminLevel, id)
+
+	// Check cache if Redis is available
+	if c.redisClient != nil {
+		cachedData, err := c.redisClient.Get(ctx, cacheKey).Result()
+		if err == nil {
+			var adminArea domain.AdminArea
+			if json.Unmarshal([]byte(cachedData), &adminArea) == nil {
+				return &adminArea, nil // Cache hit
+			}
+		} else if err != redis.Nil {
+			// Redis error, but continue to DB
+		}
+	}
+
+	// Cache miss or no Redis: fetch from DB
+	var adminArea *domain.AdminArea
 	switch adminLevel {
 	case 0:
-		var adminArea models.AdminArea0
-		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).First(&adminArea, id).Error
+		var model models.AdminArea0
+		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).First(&model, id).Error
 		if err != nil {
 			return nil, err
 		}
-		return adminArea.ToDomain(), nil
+		adminArea = model.ToDomain()
 	case 1:
-		var adminArea models.AdminArea1
-		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).First(&adminArea, id).Error
+		var model models.AdminArea1
+		err := c.db.WithContext(ctx).Table(query.Table).Select(query.Select).First(&model, id).Error
 		if err != nil {
 			return nil, err
 		}
-		return adminArea.ToDomain(), nil
+		adminArea = model.ToDomain()
 	default:
 		return nil, errors.New("invalid admin level")
 	}
+
+	// Store in cache if Redis is available
+	if c.redisClient != nil {
+		if data, marshalErr := json.Marshal(adminArea); marshalErr == nil {
+			c.redisClient.Set(ctx, cacheKey, data, 0) // No TTL, rely on LRU eviction
+		}
+	}
+
+	return adminArea, nil
 }
 
 // List implements ports.AdminAreaRepository.
