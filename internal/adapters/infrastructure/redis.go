@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -37,4 +38,37 @@ func ConnectRedis(cfg Config) *redis.Client {
 	}
 
 	return client
+}
+
+type Cache struct {
+	client *redis.Client
+}
+
+func NewCache(client *redis.Client) *Cache {
+	return &Cache{client: client}
+}
+
+func (c *Cache) Get(ctx context.Context, key string, dest interface{}) bool {
+	if c.client == nil {
+		return false
+	}
+	data, err := c.client.Get(ctx, key).Result()
+	if err != nil {
+		return false
+	}
+	if json.Unmarshal([]byte(data), dest) != nil {
+		return false
+	}
+	return true
+}
+
+func (c *Cache) Set(ctx context.Context, key string, value interface{}) {
+	if c.client == nil {
+		return
+	}
+	data, err := json.Marshal(value)
+	if err != nil {
+		return
+	}
+	c.client.Set(ctx, key, data, 0)
 }
