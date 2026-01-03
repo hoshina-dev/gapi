@@ -14,7 +14,7 @@ type Config struct {
 	Port        string
 	RedisURL    string
 	RedisPass   string
-	RedisDB     int
+	RedisDB     string
 }
 
 func LoadConfig() Config {
@@ -22,15 +22,24 @@ func LoadConfig() Config {
 		log.Warnf("Error loading .env file: %v", err)
 	}
 
-	// Default to Redis DB 0 if REDIS_DB is not set or invalid
+	redisURL := os.Getenv("REDIS_URL")
+	redisPass := os.Getenv("REDIS_PASSWORD")
 	redisDBStr := os.Getenv("REDIS_DB")
-	RedisDBInt := 0
-	if redisDBStr != "" {
-		parsed, err := strconv.Atoi(redisDBStr)
+
+	// Validate Redis config: all parameters must be set
+	if redisURL == "" || redisPass == "" || redisDBStr == "" {
+		log.Warn("Redis configuration incomplete. All REDIS_URL, REDIS_PASSWORD, and REDIS_DB must be set. Redis will not be used.")
+		redisURL = ""
+		redisPass = ""
+		redisDBStr = ""
+	} else {
+		// Check if REDIS_DB is a valid integer
+		_, err := strconv.Atoi(redisDBStr)
 		if err != nil {
-			log.Warnf("Error parsing REDIS_DB=%q, defaulting to Redis DB 0: %v", redisDBStr, err)
-		} else {
-			RedisDBInt = parsed
+			log.Warnf("Invalid REDIS_DB=%q, Redis will not be used: %v", redisDBStr, err)
+			redisURL = ""
+			redisPass = ""
+			redisDBStr = ""
 		}
 	}
 
@@ -38,8 +47,8 @@ func LoadConfig() Config {
 		DatabaseURL: os.Getenv("DATA_SOURCE_NAME"),
 		CorsOrigins: os.Getenv("CORS_ORIGINS"),
 		Port:        os.Getenv("PORT"),
-		RedisURL:    os.Getenv("REDIS_URL"),
-		RedisPass:   os.Getenv("REDIS_PASSWORD"),
-		RedisDB:     RedisDBInt,
+		RedisURL:    redisURL,
+		RedisPass:   redisPass,
+		RedisDB:     redisDBStr,
 	}
 }
