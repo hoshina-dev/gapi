@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/joho/godotenv"
@@ -12,6 +13,8 @@ type Config struct {
 	CorsOrigins string
 	Port        string
 	RedisURL    string
+	RedisPass   string
+	RedisDB     int
 }
 
 func LoadConfig() Config {
@@ -19,10 +22,17 @@ func LoadConfig() Config {
 		log.Warnf("Error loading .env file: %v", err)
 	}
 
+	RedisDBInt, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	if err != nil {
+		log.Warnf("Error loading Redis DB: %v", err)
+	}
+
 	return Config{
 		DatabaseURL: os.Getenv("DATA_SOURCE_NAME"),
 		CorsOrigins: os.Getenv("CORS_ORIGINS"),
 		Port:        os.Getenv("PORT"),
 		RedisURL:    os.Getenv("REDIS_URL"),
+		RedisPass:   os.Getenv("REDIS_PASSWORD"),
+		RedisDB:     RedisDBInt,
 	}
 }
