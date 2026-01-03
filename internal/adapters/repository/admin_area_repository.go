@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/hoshina-dev/gapi/internal/adapters/repository/models"
 	"github.com/hoshina-dev/gapi/internal/core/domain"
 	"github.com/hoshina-dev/gapi/internal/core/ports"
@@ -34,9 +35,14 @@ func (c *adminAreaRepository) getFromCache(ctx context.Context, cacheKey string,
 	}
 	data, err := c.redisClient.Get(ctx, cacheKey).Result()
 	if err != nil {
+		// Only log non-cache-miss errors
+		if err != redis.Nil {
+			log.Warnf("Redis Get error for key %s: %v", cacheKey, err)
+		}
 		return false
 	}
-	if json.Unmarshal([]byte(data), dest) != nil {
+	if err := json.Unmarshal([]byte(data), dest); err != nil {
+		log.Warnf("Failed to unmarshal cached data for key %s: %v", cacheKey, err)
 		return false
 	}
 	return true
@@ -48,9 +54,12 @@ func (c *adminAreaRepository) setToCache(ctx context.Context, cacheKey string, v
 	}
 	data, err := json.Marshal(value)
 	if err != nil {
+		log.Warnf("Failed to marshal data for cache key %s: %v", cacheKey, err)
 		return
 	}
-	c.redisClient.Set(ctx, cacheKey, data, 0)
+	if err := c.redisClient.Set(ctx, cacheKey, data, 0).Err(); err != nil {
+		log.Warnf("Failed to set cache for key %s: %v", cacheKey, err)
+	}
 }
 
 // GetByID implements ports.AdminAreaRepository.
