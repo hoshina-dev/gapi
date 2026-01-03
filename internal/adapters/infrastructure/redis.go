@@ -19,7 +19,7 @@ func ConnectRedis(cfg Config) *redis.Client {
 
 	// Test connection
 	if err := client.Ping(context.Background()).Err(); err != nil {
-		log.Errorf("Failed to connect to Redis at %s: %v", cfg.RedisURL, err)
+		log.Errorf("Failed to connect to Redis: %v", err)
 		// Return nil if connection fails, allowing the app to run without Redis
 		return nil
 	}
