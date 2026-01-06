@@ -2,9 +2,7 @@ name: Build GAPI Docker Image
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - HS-42
+  # todo on push tag
 
 permissions:
   contents: write
