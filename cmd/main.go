@@ -17,8 +17,11 @@ func main() {
 	cfg := infrastructure.LoadConfig()
 
 	db := infrastructure.ConnectDB(cfg.DatabaseURL)
+	redisClient := infrastructure.ConnectRedis(cfg)
 
-	countryRepo := repository.NewAdminAreaRepository(db)
+	repo := repository.NewAdminAreaRepository(db)
+	cache := infrastructure.NewCache(redisClient)
+	countryRepo := repository.NewCacheAdminAreaRepository(repo, cache)
 	countryService := services.NewAdminAreaService(countryRepo)
 	resolver := graph.NewResolver(countryService)
 

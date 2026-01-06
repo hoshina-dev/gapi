@@ -87,7 +87,7 @@ func TestGraphQLEndpoint_QueryWithVariables(t *testing.T) {
 	mockService.On("GetByCode",
 		mock.Anything,
 		"THA",
-		0,
+		int32(0),
 	).Return(expectedAdminArea, nil)
 
 	query := `{
@@ -163,7 +163,7 @@ func TestGraphQLEndpoint_GETNotAllowed(t *testing.T) {
 	// Arrange
 	app, _ := setupTestApp()
 
-	req := httptest.NewRequest("GET", "/query?query={adminArea(id:1, adminLevel:0){id}}", nil)
+	req := httptest.NewRequest("GET", "/query?query=%7BadminArea%28id%3A1%2C%20adminLevel%3A0%29%7Bid%7D%7D", nil)
 
 	// Act
 	resp, err := app.Test(req, -1)
