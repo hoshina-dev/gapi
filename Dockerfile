@@ -26,13 +26,19 @@ WORKDIR /root/
 # Install runtime dependencies if needed
 RUN apk --no-cache add ca-certificates
 
+# Create non-root app user
+RUN addgroup -g 1000 appgroup && \
+    adduser -D -u 1000 -G appgroup appuser
+
 # Copy the binary from builder
 COPY --from=builder /app/gapi .
 
-# Copy any config files if needed
-COPY --from=builder /app/.env.example .env
+# Set proper permissions for app user
+RUN chown -R appuser:appgroup /root/
+
+# Switch to app user
+USER appuser
 
 EXPOSE 8080
 
 CMD ["./gapi"]
-
