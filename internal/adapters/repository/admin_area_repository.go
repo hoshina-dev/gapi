@@ -107,7 +107,7 @@ func (c *adminAreaRepository) GetChildren(ctx context.Context, parentCode string
 		if err != nil {
 			return nil, err
 		}
-		return models.MapAdmin1SliceToDomain(adminAreas), nil
+		return models.MapAdminSliceToDomain(adminAreas), nil
 	default:
 		return nil, errors.New("invalid child level")
 	}
@@ -121,7 +121,7 @@ func (c *adminAreaRepository) listAdmin0(ctx context.Context) ([]*domain.AdminAr
 	if err != nil {
 		return nil, err
 	}
-	return models.MapAdmin0SliceToDomain(adminAreas), nil
+	return models.MapAdminSliceToDomain(adminAreas), nil
 }
 
 func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminArea, error) {
@@ -132,5 +132,5 @@ func (c *adminAreaRepository) listAdmin1(ctx context.Context) ([]*domain.AdminAr
 	if err != nil {
 		return nil, err
 	}
-	return models.MapAdmin1SliceToDomain(adminAreas), nil
+	return models.MapAdminSliceToDomain(adminAreas), nil
 }
