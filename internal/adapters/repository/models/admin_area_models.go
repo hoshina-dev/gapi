@@ -2,7 +2,7 @@ package models
 
 import "github.com/hoshina-dev/gapi/internal/core/domain"
 
-type adminArea interface {
+type AdminArea interface {
 	ToDomain() *domain.AdminArea
 }
 
