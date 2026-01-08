@@ -23,12 +23,12 @@ func (r *adminAreaResolver) Geometry(ctx context.Context, obj *domain.AdminArea)
 }
 
 // AdminAreas is the resolver for the adminAreas field.
-func (r *queryResolver) AdminAreas(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error) {
+func (r *queryResolver) AdminAreas(ctx context.Context, adminLevel int32, tolerance *float64) ([]*domain.AdminArea, error) {
 	return r.adminAreaService.GetAll(ctx, adminLevel)
 }
 
 // AdminArea is the resolver for the adminArea field.
-func (r *queryResolver) AdminArea(ctx context.Context, id string, adminLevel int32) (*domain.AdminArea, error) {
+func (r *queryResolver) AdminArea(ctx context.Context, id string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error) {
 	id_int, err := strconv.Atoi(id)
 	if err != nil {
 		return nil, err
@@ -37,12 +37,12 @@ func (r *queryResolver) AdminArea(ctx context.Context, id string, adminLevel int
 }
 
 // AdminAreaByCode is the resolver for the adminAreaByCode field.
-func (r *queryResolver) AdminAreaByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error) {
+func (r *queryResolver) AdminAreaByCode(ctx context.Context, code string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error) {
 	return r.adminAreaService.GetByCode(ctx, code, adminLevel)
 }
 
 // ChildrenByCode is the resolver for the childrenByCode field.
-func (r *queryResolver) ChildrenByCode(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error) {
+func (r *queryResolver) ChildrenByCode(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error) {
 	return r.adminAreaService.GetChildren(ctx, parentCode, childLevel)
 }
 
