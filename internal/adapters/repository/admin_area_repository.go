@@ -150,7 +150,7 @@ func getSelectClause(baseSelect string, tolerance *float64) string {
 		// Replace geom with simplified geometry using tolerance value
 		return strings.ReplaceAll(
 			baseSelect,
-			"ST_AsGeoJSON(geom)",
+			"ST_AsGeoJSON(geom) AS geom",
 			fmt.Sprintf("ST_AsGeoJSON(ST_SimplifyPreserveTopology(geom, %f)) AS geom", *tolerance),
 		)
 	}

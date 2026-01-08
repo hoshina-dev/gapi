@@ -27,7 +27,7 @@ func LoadConfig() Config {
 	redisDBStr := os.Getenv("REDIS_DB")
 
 	// Validate Redis config: all parameters must be set
-	if redisURL == "" || redisPass == "" || redisDBStr == "" {
+	if redisURL == "" || redisDBStr == "" {
 		log.Warn("Redis configuration incomplete. All REDIS_URL, REDIS_PASSWORD, and REDIS_DB must be set. Redis will not be used.")
 		redisURL = ""
 		redisPass = ""
