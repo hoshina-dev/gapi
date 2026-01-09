@@ -10,8 +10,26 @@ type AdminArea {
 }
 
 type Query {
-  adminAreas(adminLevel: Int!): [AdminArea!]!
-  adminArea(id: ID!, adminLevel: Int!): AdminArea
-  adminAreaByCode(code: String!, adminLevel: Int!): AdminArea
-  childrenByCode(parentCode: String!, childLevel: Int!): [AdminArea!]!
+  adminAreas(
+    adminLevel: Int!
+    tolerance: Float = 0
+  ): [AdminArea!]!
+
+  adminArea(
+    id: ID!
+    adminLevel: Int!
+    tolerance: Float = 0
+  ): AdminArea
+
+  adminAreaByCode(
+    code: String!
+    adminLevel: Int!
+    tolerance: Float = 0
+  ): AdminArea
+
+  childrenByCode(
+    parentCode: String!
+    childLevel: Int!
+    tolerance: Float = 0
+  ): [AdminArea!]!
 }

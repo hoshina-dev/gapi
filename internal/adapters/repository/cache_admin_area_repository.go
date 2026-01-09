@@ -19,8 +19,8 @@ func NewCacheAdminAreaRepository(repo ports.AdminAreaRepository, cache *infrastr
 }
 
 // GetByID implements ports.AdminAreaRepository.
-func (c *cacheAdminAreaRepository) GetByID(ctx context.Context, id int, adminLevel int32) (*domain.AdminArea, error) {
-	cacheKey := fmt.Sprintf("admin_area:%d:%d", adminLevel, id)
+func (c *cacheAdminAreaRepository) GetByID(ctx context.Context, id int, adminLevel int32, tolerance *float64) (*domain.AdminArea, error) {
+	cacheKey := c.generateCacheKey("admin_area", adminLevel, id, tolerance)
 
 	var adminArea domain.AdminArea
 	if c.cache.Get(ctx, cacheKey, &adminArea) {
@@ -28,7 +28,7 @@ func (c *cacheAdminAreaRepository) GetByID(ctx context.Context, id int, adminLev
 	}
 
 	// Cache miss: fetch from underlying repo
-	result, err := c.repo.GetByID(ctx, id, adminLevel)
+	result, err := c.repo.GetByID(ctx, id, adminLevel, tolerance)
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +38,8 @@ func (c *cacheAdminAreaRepository) GetByID(ctx context.Context, id int, adminLev
 }
 
 // List implements ports.AdminAreaRepository.
-func (c *cacheAdminAreaRepository) List(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error) {
-	cacheKey := fmt.Sprintf("admin_area:list:%d", adminLevel)
+func (c *cacheAdminAreaRepository) List(ctx context.Context, adminLevel int32, tolerance *float64) ([]*domain.AdminArea, error) {
+	cacheKey := c.generateCacheKey("admin_area:list", adminLevel, tolerance)
 
 	var adminAreas []*domain.AdminArea
 	if c.cache.Get(ctx, cacheKey, &adminAreas) {
@@ -47,7 +47,7 @@ func (c *cacheAdminAreaRepository) List(ctx context.Context, adminLevel int32) (
 	}
 
 	// Cache miss: fetch from underlying repo
-	result, err := c.repo.List(ctx, adminLevel)
+	result, err := c.repo.List(ctx, adminLevel, tolerance)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +57,8 @@ func (c *cacheAdminAreaRepository) List(ctx context.Context, adminLevel int32) (
 }
 
 // GetByCode implements ports.AdminAreaRepository.
-func (c *cacheAdminAreaRepository) GetByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error) {
-	cacheKey := fmt.Sprintf("admin_area:code:%d:%s", adminLevel, code)
+func (c *cacheAdminAreaRepository) GetByCode(ctx context.Context, code string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error) {
+	cacheKey := c.generateCacheKey("admin_area:code", adminLevel, code, tolerance)
 
 	var adminArea domain.AdminArea
 	if c.cache.Get(ctx, cacheKey, &adminArea) {
@@ -66,7 +66,7 @@ func (c *cacheAdminAreaRepository) GetByCode(ctx context.Context, code string, a
 	}
 
 	// Cache miss: fetch from underlying repo
-	result, err := c.repo.GetByCode(ctx, code, adminLevel)
+	result, err := c.repo.GetByCode(ctx, code, adminLevel, tolerance)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +76,8 @@ func (c *cacheAdminAreaRepository) GetByCode(ctx context.Context, code string, a
 }
 
 // GetChildren implements ports.AdminAreaRepository.
-func (c *cacheAdminAreaRepository) GetChildren(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error) {
-	cacheKey := fmt.Sprintf("admin_area:children:%d:%s", childLevel, parentCode)
+func (c *cacheAdminAreaRepository) GetChildren(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error) {
+	cacheKey := c.generateCacheKey("admin_area:children", childLevel, parentCode, tolerance)
 
 	var adminAreas []*domain.AdminArea
 	if c.cache.Get(ctx, cacheKey, &adminAreas) {
@@ -85,11 +85,29 @@ func (c *cacheAdminAreaRepository) GetChildren(ctx context.Context, parentCode s
 	}
 
 	// Cache miss: fetch from underlying repo
-	result, err := c.repo.GetChildren(ctx, parentCode, childLevel)
+	result, err := c.repo.GetChildren(ctx, parentCode, childLevel, tolerance)
 	if err != nil {
 		return nil, err
 	}
 
 	c.cache.Set(ctx, cacheKey, result)
 	return result, nil
+}
+
+// generateCacheKey creates a consistent cache key by properly formatting the tolerance pointer
+func (c *cacheAdminAreaRepository) generateCacheKey(prefix string, parts ...interface{}) string {
+	key := prefix
+	for _, part := range parts {
+		switch v := part.(type) {
+		case *float64:
+			if v == nil {
+				key += ":<nil>"
+			} else {
+				key += fmt.Sprintf(":%.10f", *v)
+			}
+		default:
+			key += fmt.Sprintf(":%v", v)
+		}
+	}
+	return key
 }

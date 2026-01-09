@@ -57,10 +57,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AdminArea       func(childComplexity int, id string, adminLevel int32) int
-		AdminAreaByCode func(childComplexity int, code string, adminLevel int32) int
-		AdminAreas      func(childComplexity int, adminLevel int32) int
-		ChildrenByCode  func(childComplexity int, parentCode string, childLevel int32) int
+		AdminArea       func(childComplexity int, id string, adminLevel int32, tolerance *float64) int
+		AdminAreaByCode func(childComplexity int, code string, adminLevel int32, tolerance *float64) int
+		AdminAreas      func(childComplexity int, adminLevel int32, tolerance *float64) int
+		ChildrenByCode  func(childComplexity int, parentCode string, childLevel int32, tolerance *float64) int
 	}
 }
 
@@ -68,10 +68,10 @@ type AdminAreaResolver interface {
 	Geometry(ctx context.Context, obj *domain.AdminArea) (map[string]any, error)
 }
 type QueryResolver interface {
-	AdminAreas(ctx context.Context, adminLevel int32) ([]*domain.AdminArea, error)
-	AdminArea(ctx context.Context, id string, adminLevel int32) (*domain.AdminArea, error)
-	AdminAreaByCode(ctx context.Context, code string, adminLevel int32) (*domain.AdminArea, error)
-	ChildrenByCode(ctx context.Context, parentCode string, childLevel int32) ([]*domain.AdminArea, error)
+	AdminAreas(ctx context.Context, adminLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
+	AdminArea(ctx context.Context, id string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
+	AdminAreaByCode(ctx context.Context, code string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
+	ChildrenByCode(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
 }
 
 type executableSchema struct {
@@ -140,7 +140,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.AdminArea(childComplexity, args["id"].(string), args["adminLevel"].(int32)), true
+		return e.complexity.Query.AdminArea(childComplexity, args["id"].(string), args["adminLevel"].(int32), args["tolerance"].(*float64)), true
 	case "Query.adminAreaByCode":
 		if e.complexity.Query.AdminAreaByCode == nil {
 			break
@@ -151,7 +151,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.AdminAreaByCode(childComplexity, args["code"].(string), args["adminLevel"].(int32)), true
+		return e.complexity.Query.AdminAreaByCode(childComplexity, args["code"].(string), args["adminLevel"].(int32), args["tolerance"].(*float64)), true
 	case "Query.adminAreas":
 		if e.complexity.Query.AdminAreas == nil {
 			break
@@ -162,7 +162,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.AdminAreas(childComplexity, args["adminLevel"].(int32)), true
+		return e.complexity.Query.AdminAreas(childComplexity, args["adminLevel"].(int32), args["tolerance"].(*float64)), true
 	case "Query.childrenByCode":
 		if e.complexity.Query.ChildrenByCode == nil {
 			break
@@ -173,7 +173,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.ChildrenByCode(childComplexity, args["parentCode"].(string), args["childLevel"].(int32)), true
+		return e.complexity.Query.ChildrenByCode(childComplexity, args["parentCode"].(string), args["childLevel"].(int32), args["tolerance"].(*float64)), true
 
 	}
 	return 0, false
@@ -307,6 +307,11 @@ func (ec *executionContext) field_Query_adminAreaByCode_args(ctx context.Context
 		return nil, err
 	}
 	args["adminLevel"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "tolerance", ec.unmarshalOFloat2ᚖfloat64)
+	if err != nil {
+		return nil, err
+	}
+	args["tolerance"] = arg2
 	return args, nil
 }
 
@@ -323,6 +328,11 @@ func (ec *executionContext) field_Query_adminArea_args(ctx context.Context, rawA
 		return nil, err
 	}
 	args["adminLevel"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "tolerance", ec.unmarshalOFloat2ᚖfloat64)
+	if err != nil {
+		return nil, err
+	}
+	args["tolerance"] = arg2
 	return args, nil
 }
 
@@ -334,6 +344,11 @@ func (ec *executionContext) field_Query_adminAreas_args(ctx context.Context, raw
 		return nil, err
 	}
 	args["adminLevel"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "tolerance", ec.unmarshalOFloat2ᚖfloat64)
+	if err != nil {
+		return nil, err
+	}
+	args["tolerance"] = arg1
 	return args, nil
 }
 
@@ -350,6 +365,11 @@ func (ec *executionContext) field_Query_childrenByCode_args(ctx context.Context,
 		return nil, err
 	}
 	args["childLevel"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "tolerance", ec.unmarshalOFloat2ᚖfloat64)
+	if err != nil {
+		return nil, err
+	}
+	args["tolerance"] = arg2
 	return args, nil
 }
 
@@ -587,7 +607,7 @@ func (ec *executionContext) _Query_adminAreas(ctx context.Context, field graphql
 		ec.fieldContext_Query_adminAreas,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().AdminAreas(ctx, fc.Args["adminLevel"].(int32))
+			return ec.resolvers.Query().AdminAreas(ctx, fc.Args["adminLevel"].(int32), fc.Args["tolerance"].(*float64))
 		},
 		nil,
 		ec.marshalNAdminArea2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminAreaᚄ,
@@ -642,7 +662,7 @@ func (ec *executionContext) _Query_adminArea(ctx context.Context, field graphql.
 		ec.fieldContext_Query_adminArea,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().AdminArea(ctx, fc.Args["id"].(string), fc.Args["adminLevel"].(int32))
+			return ec.resolvers.Query().AdminArea(ctx, fc.Args["id"].(string), fc.Args["adminLevel"].(int32), fc.Args["tolerance"].(*float64))
 		},
 		nil,
 		ec.marshalOAdminArea2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminArea,
@@ -697,7 +717,7 @@ func (ec *executionContext) _Query_adminAreaByCode(ctx context.Context, field gr
 		ec.fieldContext_Query_adminAreaByCode,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().AdminAreaByCode(ctx, fc.Args["code"].(string), fc.Args["adminLevel"].(int32))
+			return ec.resolvers.Query().AdminAreaByCode(ctx, fc.Args["code"].(string), fc.Args["adminLevel"].(int32), fc.Args["tolerance"].(*float64))
 		},
 		nil,
 		ec.marshalOAdminArea2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminArea,
@@ -752,7 +772,7 @@ func (ec *executionContext) _Query_childrenByCode(ctx context.Context, field gra
 		ec.fieldContext_Query_childrenByCode,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().ChildrenByCode(ctx, fc.Args["parentCode"].(string), fc.Args["childLevel"].(int32))
+			return ec.resolvers.Query().ChildrenByCode(ctx, fc.Args["parentCode"].(string), fc.Args["childLevel"].(int32), fc.Args["tolerance"].(*float64))
 		},
 		nil,
 		ec.marshalNAdminArea2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminAreaᚄ,
@@ -3364,6 +3384,23 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalFloatContext(*v)
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {
