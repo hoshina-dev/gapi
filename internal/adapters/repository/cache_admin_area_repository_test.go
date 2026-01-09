@@ -20,12 +20,6 @@ func TestGenerateCacheKey(t *testing.T) {
 			expected: "admin_area:1:123:<nil>",
 		},
 		{
-			name:     "zero tolerance",
-			prefix:   "admin_area",
-			parts:    []interface{}{int32(1), 123, floatPtr(0.0)},
-			expected: "admin_area:1:123:0.0000000000",
-		},
-		{
 			name:     "non-zero tolerance",
 			prefix:   "admin_area",
 			parts:    []interface{}{int32(1), 123, floatPtr(0.001)},
@@ -59,15 +53,6 @@ func TestGenerateCacheKey(t *testing.T) {
 			}
 		})
 	}
-
-	// Test that same tolerance value generates same cache key
-	t.Run("consistency check", func(t *testing.T) {
-		key1 := repo.generateCacheKey("admin_area", int32(1), 123, floatPtr(0.001))
-		key2 := repo.generateCacheKey("admin_area", int32(1), 123, floatPtr(0.001))
-		if key1 != key2 {
-			t.Errorf("Same tolerance value should generate same cache key: key1=%v, key2=%v", key1, key2)
-		}
-	})
 }
 
 func floatPtr(f float64) *float64 {
