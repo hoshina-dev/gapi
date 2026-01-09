@@ -95,8 +95,7 @@ func (c *Cache) Set(ctx context.Context, key string, value interface{}) {
 	// Compress using S2
 	compressed := s2.Encode(nil, data)
 
-	// Store in Redis with TTL (24 hours)
-	if err := c.client.Set(ctx, key, compressed, 24*time.Hour).Err(); err != nil {
+	if err := c.client.Set(ctx, key, compressed, 0).Err(); err != nil {
 		log.Errorf("Failed to set cache: %v", err)
 	}
 }
