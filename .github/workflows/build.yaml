@@ -1,8 +1,9 @@
 name: Build GAPI Docker Image
 
 on:
-  workflow_dispatch:
-  # todo on push tag
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -118,8 +119,12 @@ jobs:
           set -eux
           GHCR_IMAGE="${{ needs.prepare.outputs.ghcr_image_full }}"
           BUILD_IMAGE="${{ needs.prepare.outputs.ghcr_image_full }}-build"
+          COMMIT_SHA="${{ github.sha }}"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
 
-          docker buildx imagetools create --tag ${GHCR_IMAGE}:latest \
+          docker buildx imagetools create \
+            --tag ${GHCR_IMAGE}:latest \
+            --tag ${GHCR_IMAGE}:${SHORT_SHA} \
             ${BUILD_IMAGE}:latest-amd64 \
             ${BUILD_IMAGE}:latest-arm64
 
@@ -137,7 +142,7 @@ jobs:
 
           # Extract package name from image name
           PACKAGE_NAME="${{ env.GHCR_IMAGE_NAME }}-build"
-          
+
           echo "Attempting to delete package: ${PACKAGE_NAME}"
 
           # Try to delete the entire package (this will fail if package doesn't exist, which is fine)
@@ -151,4 +156,3 @@ jobs:
           echo "Cleanup completed"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
