@@ -94,6 +94,14 @@ func (c *cacheAdminAreaRepository) GetChildren(ctx context.Context, parentCode s
 	return result, nil
 }
 
+// FilterCoordinatesByBoundary implements ports.AdminAreaRepository.
+// Note: We don't cache filtered coordinate results as they're too specific to be reused effectively.
+func (c *cacheAdminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([][]float64, error) {
+	// Pass through to underlying repository without caching
+	// Coordinate filtering results are too specific to cache effectively
+	return c.repo.FilterCoordinatesByBoundary(ctx, coordinates, boundaryID, adminLevel)
+}
+
 // generateCacheKey creates a consistent cache key by properly formatting the tolerance pointer
 func (c *cacheAdminAreaRepository) generateCacheKey(prefix string, parts ...interface{}) string {
 	key := prefix

@@ -156,3 +156,69 @@ func getSelectClause(baseSelect string, tolerance *float64) string {
 	}
 	return baseSelect
 }
+
+// FilterCoordinatesByBoundary implements [ports.AdminAreaRepository].
+func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([][]float64, error) {
+	query := queries[adminLevel]
+	if query.Table == "" {
+		return nil, errors.New("invalid admin level")
+	}
+
+	// Build VALUES clause for coordinates
+	// Format: (idx, lat, lon), (idx, lat, lon), ...
+	valuesClauses := make([]string, len(coordinates))
+	for i, coord := range coordinates {
+		valuesClauses[i] = fmt.Sprintf("(%d, %f, %f)", i, coord[0], coord[1])
+	}
+	valuesSQL := strings.Join(valuesClauses, ", ")
+
+	// Build SQL query using CTE
+	// Uses ST_Contains to filter coordinates within the boundary polygon
+	// Note: ST_MakePoint takes (lon, lat) not (lat, lon)!
+	sql := fmt.Sprintf(`
+		WITH
+			boundary AS (
+				SELECT geom FROM %s WHERE gid_%d = ?
+			),
+			input_coords(idx, lat, lon) AS (
+				VALUES %s
+			)
+		SELECT c.lat, c.lon
+		FROM input_coords c, boundary b
+		WHERE ST_Contains(
+			b.geom,
+			ST_SetSRID(ST_MakePoint(c.lon, c.lat), 4326)
+		)
+		ORDER BY c.idx
+	`, query.Table, adminLevel, valuesSQL)
+
+	type Result struct {
+		Lat float64
+		Lon float64
+	}
+
+	var results []Result
+	if err := c.db.WithContext(ctx).Raw(sql, boundaryID).Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	// If no results found, check if boundary exists
+	if len(results) == 0 {
+		var count int64
+		whereClause := fmt.Sprintf("gid_%d = ?", adminLevel)
+		if err := c.db.WithContext(ctx).Table(query.Table).Where(whereClause, boundaryID).Count(&count).Error; err != nil {
+			return nil, err
+		}
+		if count == 0 {
+			return nil, fmt.Errorf("boundary not found: %s", boundaryID)
+		}
+	}
+
+	// Convert results to output format
+	output := make([][]float64, len(results))
+	for i, r := range results {
+		output[i] = []float64{r.Lat, r.Lon}
+	}
+
+	return output, nil
+}
