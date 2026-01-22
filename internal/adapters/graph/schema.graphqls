@@ -1,5 +1,10 @@
 scalar Map
 
+input CoordinateInput {
+  lat: Float!
+  lon: Float!
+}
+
 type AdminArea {
   id: ID!
   name: String!
@@ -32,4 +37,9 @@ type Query {
     childLevel: Int!
     tolerance: Float = 0
   ): [AdminArea!]!
+
+  filterCoordinatesByBoundary(
+    coordinates: [CoordinateInput!]!
+    boundaryId: String!
+  ): [[Float!]!]!
 }
