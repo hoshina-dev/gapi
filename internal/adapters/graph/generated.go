@@ -14,6 +14,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
+	"github.com/hoshina-dev/gapi/internal/adapters/graph/model"
 	"github.com/hoshina-dev/gapi/internal/core/domain"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -57,10 +58,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AdminArea       func(childComplexity int, id string, adminLevel int32, tolerance *float64) int
-		AdminAreaByCode func(childComplexity int, code string, adminLevel int32, tolerance *float64) int
-		AdminAreas      func(childComplexity int, adminLevel int32, tolerance *float64) int
-		ChildrenByCode  func(childComplexity int, parentCode string, childLevel int32, tolerance *float64) int
+		AdminArea                   func(childComplexity int, id string, adminLevel int32, tolerance *float64) int
+		AdminAreaByCode             func(childComplexity int, code string, adminLevel int32, tolerance *float64) int
+		AdminAreas                  func(childComplexity int, adminLevel int32, tolerance *float64) int
+		ChildrenByCode              func(childComplexity int, parentCode string, childLevel int32, tolerance *float64) int
+		FilterCoordinatesByBoundary func(childComplexity int, coordinates []*model.CoordinateInput, boundaryID string) int
 	}
 }
 
@@ -72,6 +74,7 @@ type QueryResolver interface {
 	AdminArea(ctx context.Context, id string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
 	AdminAreaByCode(ctx context.Context, code string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
 	ChildrenByCode(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
+	FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([][]float64, error)
 }
 
 type executableSchema struct {
@@ -174,6 +177,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.ChildrenByCode(childComplexity, args["parentCode"].(string), args["childLevel"].(int32), args["tolerance"].(*float64)), true
+	case "Query.filterCoordinatesByBoundary":
+		if e.complexity.Query.FilterCoordinatesByBoundary == nil {
+			break
+		}
+
+		args, err := ec.field_Query_filterCoordinatesByBoundary_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FilterCoordinatesByBoundary(childComplexity, args["coordinates"].([]*model.CoordinateInput), args["boundaryId"].(string)), true
 
 	}
 	return 0, false
@@ -182,7 +196,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
-	inputUnmarshalMap := graphql.BuildUnmarshalerMap()
+	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputCoordinateInput,
+	)
 	first := true
 
 	switch opCtx.Operation.Operation {
@@ -370,6 +386,22 @@ func (ec *executionContext) field_Query_childrenByCode_args(ctx context.Context,
 		return nil, err
 	}
 	args["tolerance"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_filterCoordinatesByBoundary_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "coordinates", ec.unmarshalNCoordinateInput2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateInputᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["coordinates"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "boundaryId", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["boundaryId"] = arg1
 	return args, nil
 }
 
@@ -813,6 +845,47 @@ func (ec *executionContext) fieldContext_Query_childrenByCode(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_childrenByCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_filterCoordinatesByBoundary(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_filterCoordinatesByBoundary,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().FilterCoordinatesByBoundary(ctx, fc.Args["coordinates"].([]*model.CoordinateInput), fc.Args["boundaryId"].(string))
+		},
+		nil,
+		ec.marshalNFloat2ᚕᚕfloat64ᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_filterCoordinatesByBoundary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_filterCoordinatesByBoundary_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2373,6 +2446,40 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputCoordinateInput(ctx context.Context, obj any) (model.CoordinateInput, error) {
+	var it model.CoordinateInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"lat", "lon"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "lat":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lat"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Lat = data
+		case "lon":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lon"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Lon = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2562,6 +2669,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_childrenByCode(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "filterCoordinatesByBoundary":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_filterCoordinatesByBoundary(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -3008,6 +3137,102 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNCoordinateInput2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateInputᚄ(ctx context.Context, v any) ([]*model.CoordinateInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.CoordinateInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNCoordinateInput2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNCoordinateInput2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateInput(ctx context.Context, v any) (*model.CoordinateInput, error) {
+	res, err := ec.unmarshalInputCoordinateInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalNFloat2ᚕfloat64ᚄ(ctx context.Context, v any) ([]float64, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]float64, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFloat2float64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNFloat2ᚕfloat64ᚄ(ctx context.Context, sel ast.SelectionSet, v []float64) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNFloat2float64(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNFloat2ᚕᚕfloat64ᚄ(ctx context.Context, v any) ([][]float64, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([][]float64, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFloat2ᚕfloat64ᚄ(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNFloat2ᚕᚕfloat64ᚄ(ctx context.Context, sel ast.SelectionSet, v [][]float64) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNFloat2ᚕfloat64ᚄ(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNID2int(ctx context.Context, v any) (int, error) {
