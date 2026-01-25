@@ -123,13 +123,18 @@ func list[T models.AdminArea](db *gorm.DB, ctx context.Context, adminLevel int32
 
 func getByCode[T models.AdminArea](db *gorm.DB, ctx context.Context, code string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error) {
 	query := queries[adminLevel]
-	whereClause := "gid_" + strconv.Itoa(int(adminLevel)) + " = ?"
+	gidCol := "gid_" + strconv.Itoa(int(adminLevel))
 	var adminArea T
 	selectClause := getSelectClause(query.Select, tolerance)
 	q := db.WithContext(ctx).Table(query.Table).Select(selectClause)
-	if err := q.Where(whereClause, code).First(&adminArea).Error; err != nil {
+	if strings.Contains(code, "_") {
+		if err := q.Where(gidCol+" = ?", code).First(&adminArea).Error; err != nil {
+			return nil, err
+		}
+	} else if err := q.Where(gidCol+" LIKE ? ESCAPE '\\' ", code+"\\_%").First(&adminArea).Error; err != nil {
 		return nil, err
 	}
+
 	return adminArea.ToDomain(), nil
 }
 
