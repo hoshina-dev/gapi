@@ -64,7 +64,7 @@ func (r *queryResolver) ChildrenByCode(ctx context.Context, parentCode string, c
 }
 
 // FilterCoordinatesByBoundary is the resolver for the filterCoordinatesByBoundary field.
-func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([][]float64, error) {
+func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([]*model.Coordinate, error) {
 	// Parse and validate boundary ID
 	boundaryInfo, err := parseBoundaryID(boundaryID)
 	if err != nil {
@@ -83,12 +83,26 @@ func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordin
 	}
 
 	// Call service layer
-	return r.adminAreaService.FilterCoordinatesByBoundary(
+	result, err := r.adminAreaService.FilterCoordinatesByBoundary(
 		ctx,
 		coords,
 		boundaryInfo.GIDValue,
 		boundaryInfo.AdminLevel,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert service layer result to GraphQL model
+	filtered := make([]*model.Coordinate, len(result))
+	for i, coord := range result {
+		filtered[i] = &model.Coordinate{
+			Lat: coord[0],
+			Lon: coord[1],
+		}
+	}
+
+	return filtered, nil
 }
 
 // AdminArea returns AdminAreaResolver implementation.
