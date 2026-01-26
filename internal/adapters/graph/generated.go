@@ -14,6 +14,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
+	"github.com/hoshina-dev/gapi/internal/adapters/graph/model"
 	"github.com/hoshina-dev/gapi/internal/core/domain"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -56,11 +57,17 @@ type ComplexityRoot struct {
 		ParentCode func(childComplexity int) int
 	}
 
+	Coordinate struct {
+		Lat func(childComplexity int) int
+		Lon func(childComplexity int) int
+	}
+
 	Query struct {
-		AdminArea       func(childComplexity int, id string, adminLevel int32, tolerance *float64) int
-		AdminAreaByCode func(childComplexity int, code string, adminLevel int32, tolerance *float64) int
-		AdminAreas      func(childComplexity int, adminLevel int32, tolerance *float64) int
-		ChildrenByCode  func(childComplexity int, parentCode string, childLevel int32, tolerance *float64) int
+		AdminArea                   func(childComplexity int, id string, adminLevel int32, tolerance *float64) int
+		AdminAreaByCode             func(childComplexity int, code string, adminLevel int32, tolerance *float64) int
+		AdminAreas                  func(childComplexity int, adminLevel int32, tolerance *float64) int
+		ChildrenByCode              func(childComplexity int, parentCode string, childLevel int32, tolerance *float64) int
+		FilterCoordinatesByBoundary func(childComplexity int, coordinates []*model.CoordinateInput, boundaryID string) int
 	}
 }
 
@@ -72,6 +79,7 @@ type QueryResolver interface {
 	AdminArea(ctx context.Context, id string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
 	AdminAreaByCode(ctx context.Context, code string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
 	ChildrenByCode(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
+	FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([]*model.Coordinate, error)
 }
 
 type executableSchema struct {
@@ -130,6 +138,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.AdminArea.ParentCode(childComplexity), true
 
+	case "Coordinate.lat":
+		if e.complexity.Coordinate.Lat == nil {
+			break
+		}
+
+		return e.complexity.Coordinate.Lat(childComplexity), true
+	case "Coordinate.lon":
+		if e.complexity.Coordinate.Lon == nil {
+			break
+		}
+
+		return e.complexity.Coordinate.Lon(childComplexity), true
+
 	case "Query.adminArea":
 		if e.complexity.Query.AdminArea == nil {
 			break
@@ -174,6 +195,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.ChildrenByCode(childComplexity, args["parentCode"].(string), args["childLevel"].(int32), args["tolerance"].(*float64)), true
+	case "Query.filterCoordinatesByBoundary":
+		if e.complexity.Query.FilterCoordinatesByBoundary == nil {
+			break
+		}
+
+		args, err := ec.field_Query_filterCoordinatesByBoundary_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FilterCoordinatesByBoundary(childComplexity, args["coordinates"].([]*model.CoordinateInput), args["boundaryId"].(string)), true
 
 	}
 	return 0, false
@@ -182,7 +214,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
-	inputUnmarshalMap := graphql.BuildUnmarshalerMap()
+	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputCoordinateInput,
+	)
 	first := true
 
 	switch opCtx.Operation.Operation {
@@ -370,6 +404,22 @@ func (ec *executionContext) field_Query_childrenByCode_args(ctx context.Context,
 		return nil, err
 	}
 	args["tolerance"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_filterCoordinatesByBoundary_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "coordinates", ec.unmarshalNCoordinateInput2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateInputᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["coordinates"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "boundaryId", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["boundaryId"] = arg1
 	return args, nil
 }
 
@@ -599,6 +649,64 @@ func (ec *executionContext) fieldContext_AdminArea_parentCode(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Coordinate_lat(ctx context.Context, field graphql.CollectedField, obj *model.Coordinate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Coordinate_lat,
+		func(ctx context.Context) (any, error) {
+			return obj.Lat, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Coordinate_lat(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Coordinate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Coordinate_lon(ctx context.Context, field graphql.CollectedField, obj *model.Coordinate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Coordinate_lon,
+		func(ctx context.Context) (any, error) {
+			return obj.Lon, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Coordinate_lon(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Coordinate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_adminAreas(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -813,6 +921,53 @@ func (ec *executionContext) fieldContext_Query_childrenByCode(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_childrenByCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_filterCoordinatesByBoundary(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_filterCoordinatesByBoundary,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().FilterCoordinatesByBoundary(ctx, fc.Args["coordinates"].([]*model.CoordinateInput), fc.Args["boundaryId"].(string))
+		},
+		nil,
+		ec.marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_filterCoordinatesByBoundary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "lat":
+				return ec.fieldContext_Coordinate_lat(ctx, field)
+			case "lon":
+				return ec.fieldContext_Coordinate_lon(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Coordinate", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_filterCoordinatesByBoundary_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2373,6 +2528,40 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputCoordinateInput(ctx context.Context, obj any) (model.CoordinateInput, error) {
+	var it model.CoordinateInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"lat", "lon"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "lat":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lat"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Lat = data
+		case "lon":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lon"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Lon = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2450,6 +2639,50 @@ func (ec *executionContext) _AdminArea(ctx context.Context, sel ast.SelectionSet
 			}
 		case "parentCode":
 			out.Values[i] = ec._AdminArea_parentCode(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var coordinateImplementors = []string{"Coordinate"}
+
+func (ec *executionContext) _Coordinate(ctx context.Context, sel ast.SelectionSet, obj *model.Coordinate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, coordinateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Coordinate")
+		case "lat":
+			out.Values[i] = ec._Coordinate_lat(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lon":
+			out.Values[i] = ec._Coordinate_lon(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2562,6 +2795,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_childrenByCode(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "filterCoordinatesByBoundary":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_filterCoordinatesByBoundary(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -3008,6 +3263,96 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Coordinate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCoordinate2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCoordinate2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinate(ctx context.Context, sel ast.SelectionSet, v *model.Coordinate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Coordinate(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNCoordinateInput2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateInputᚄ(ctx context.Context, v any) ([]*model.CoordinateInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.CoordinateInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNCoordinateInput2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNCoordinateInput2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateInput(ctx context.Context, v any) (*model.CoordinateInput, error) {
+	res, err := ec.unmarshalInputCoordinateInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalNID2int(ctx context.Context, v any) (int, error) {

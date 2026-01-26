@@ -34,3 +34,8 @@ func (c *adminAreaService) GetByCode(ctx context.Context, code string, adminLeve
 func (c *adminAreaService) GetChildren(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error) {
 	return c.repo.GetChildren(ctx, parentCode, childLevel, tolerance)
 }
+
+// FilterCoordinatesByBoundary implements [ports.AdminAreaService].
+func (c *adminAreaService) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([][]float64, error) {
+	return c.repo.FilterCoordinatesByBoundary(ctx, coordinates, boundaryID, adminLevel)
+}
