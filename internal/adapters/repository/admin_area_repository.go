@@ -126,12 +126,11 @@ func getByCode[T models.AdminArea](db *gorm.DB, ctx context.Context, code string
 	gidCol := "gid_" + strconv.Itoa(int(adminLevel))
 	var adminArea T
 	selectClause := getSelectClause(query.Select, tolerance)
-	q := db.WithContext(ctx).Table(query.Table).Select(selectClause)
-	if strings.Contains(code, "_") {
-		if err := q.Where(gidCol+" = ?", code).First(&adminArea).Error; err != nil {
-			return nil, err
-		}
-	} else if err := q.Where(gidCol+" LIKE ? ESCAPE '\\' ", code+"\\_%").First(&adminArea).Error; err != nil {
+
+	whereClause, args := buildGIDWhereClause(gidCol, code, adminLevel)
+	q := db.WithContext(ctx).Table(query.Table).Select(selectClause).Where(whereClause, args...)
+
+	if err := q.First(&adminArea).Error; err != nil {
 		return nil, err
 	}
 
@@ -162,6 +161,19 @@ func getSelectClause(baseSelect string, tolerance *float64) string {
 	return baseSelect
 }
 
+func buildGIDWhereClause(gidColumn, code string, adminLevel int32) (whereClause string, args []any) {
+	// Level 0 has no versioning, use exact match
+	if adminLevel == 0 {
+		return gidColumn + " = ?", []any{code}
+	}
+
+	// For other levels, handle versioning
+	if strings.Contains(code, "_") {
+		return gidColumn + " = ?", []any{code} // if code already contain versioning, use exact match otherwise LIKE
+	}
+	return gidColumn + " LIKE ? ESCAPE '\\'", []any{code + "\\_%"}
+}
+
 // FilterCoordinatesByBoundary implements [ports.AdminAreaRepository].
 func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([][]float64, error) {
 	query := queries[adminLevel]
@@ -177,13 +189,17 @@ func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, c
 	}
 	valuesSQL := strings.Join(valuesClauses, ", ")
 
+	// Build GID WHERE clause that handles versioning
+	gidCol := "gid_" + strconv.Itoa(int(adminLevel))
+	whereClause, args := buildGIDWhereClause(gidCol, boundaryID, adminLevel)
+
 	// Build SQL query using CTE
 	// Uses ST_Contains to filter coordinates within the boundary polygon
 	// Note: ST_MakePoint takes (lon, lat) not (lat, lon)!
 	sql := fmt.Sprintf(`
 		WITH
 			boundary AS (
-				SELECT geom FROM %s WHERE gid_%d = ?
+				SELECT geom FROM %s WHERE %s
 			),
 			input_coords(idx, lat, lon) AS (
 				VALUES %s
@@ -195,7 +211,7 @@ func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, c
 			ST_SetSRID(ST_MakePoint(c.lon, c.lat), 4326)
 		)
 		ORDER BY c.idx
-	`, query.Table, adminLevel, valuesSQL)
+	`, query.Table, whereClause, valuesSQL)
 
 	type Result struct {
 		Lat float64
@@ -203,15 +219,14 @@ func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, c
 	}
 
 	var results []Result
-	if err := c.db.WithContext(ctx).Raw(sql, boundaryID).Scan(&results).Error; err != nil {
+	if err := c.db.WithContext(ctx).Raw(sql, args...).Scan(&results).Error; err != nil {
 		return nil, err
 	}
 
 	// If no results found, check if boundary exists
 	if len(results) == 0 {
 		var count int64
-		whereClause := fmt.Sprintf("gid_%d = ?", adminLevel)
-		if err := c.db.WithContext(ctx).Table(query.Table).Where(whereClause, boundaryID).Count(&count).Error; err != nil {
+		if err := c.db.WithContext(ctx).Table(query.Table).Where(whereClause, args...).Count(&count).Error; err != nil {
 			return nil, err
 		}
 		if count == 0 {
