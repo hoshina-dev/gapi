@@ -43,10 +43,10 @@ func (m *MockAdminAreaService) GetChildren(ctx context.Context, parentCode strin
 	return args.Get(0).([]*domain.AdminArea), args.Error(1)
 }
 
-func (m *MockAdminAreaService) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([]*domain.FilteredCoordinate, error) {
+func (m *MockAdminAreaService) FilterCoordinatesByBoundary(ctx context.Context, coordinates []*domain.Coordinate, boundaryID string, adminLevel int32) ([]*domain.Coordinate, error) {
 	args := m.Called(ctx, coordinates, boundaryID, adminLevel)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*domain.FilteredCoordinate), args.Error(1)
+	return args.Get(0).([]*domain.Coordinate), args.Error(1)
 }

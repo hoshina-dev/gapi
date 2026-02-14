@@ -36,6 +36,30 @@ func (c *adminAreaService) GetChildren(ctx context.Context, parentCode string, c
 }
 
 // FilterCoordinatesByBoundary implements [ports.AdminAreaService].
-func (c *adminAreaService) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([]*domain.FilteredCoordinate, error) {
-	return c.repo.FilterCoordinatesByBoundary(ctx, coordinates, boundaryID, adminLevel)
+func (c *adminAreaService) FilterCoordinatesByBoundary(ctx context.Context, coordinates []*domain.Coordinate, boundaryID string, adminLevel int32) ([]*domain.Coordinate, error) {
+	// Convert domain coordinates to repository format and create index-to-ID mapping
+	coords := make([][2]float64, len(coordinates))
+	idxToID := make(map[int]string, len(coordinates))
+	for i, coord := range coordinates {
+		coords[i] = [2]float64{coord.Lat, coord.Lon}
+		idxToID[i] = coord.ID
+	}
+
+	// Call repository
+	filtered, err := c.repo.FilterCoordinatesByBoundary(ctx, coords, boundaryID, adminLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert repository results back to domain coordinates with preserved IDs
+	result := make([]*domain.Coordinate, len(filtered))
+	for i, fc := range filtered {
+		result[i] = &domain.Coordinate{
+			ID:  idxToID[fc.Idx],
+			Lat: fc.Lat,
+			Lon: fc.Lon,
+		}
+	}
+
+	return result, nil
 }

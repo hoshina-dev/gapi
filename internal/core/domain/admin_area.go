@@ -9,6 +9,12 @@ type AdminArea struct {
 	Geometry   []byte  `json:"geom"`
 }
 
+type Coordinate struct {
+	ID  string
+	Lat float64
+	Lon float64
+}
+
 type FilteredCoordinate struct {
 	Idx int
 	Lat float64
