@@ -76,16 +76,20 @@ func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordin
 		return nil, err
 	}
 
-	// Convert CoordinateInput to service layer format
-	coords := make([][2]float64, len(coordinates))
+	// Convert GraphQL model to domain model
+	domainCoords := make([]*domain.Coordinate, len(coordinates))
 	for i, coord := range coordinates {
-		coords[i] = [2]float64{coord.Lat, coord.Lon}
+		domainCoords[i] = &domain.Coordinate{
+			ID:  coord.ID,
+			Lat: coord.Lat,
+			Lon: coord.Lon,
+		}
 	}
 
 	// Call service layer
 	result, err := r.adminAreaService.FilterCoordinatesByBoundary(
 		ctx,
-		coords,
+		domainCoords,
 		boundaryInfo.GIDValue,
 		boundaryInfo.AdminLevel,
 	)
@@ -93,12 +97,13 @@ func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordin
 		return nil, err
 	}
 
-	// Convert service layer result to GraphQL model
+	// Convert domain model back to GraphQL model
 	filtered := make([]*model.Coordinate, len(result))
 	for i, coord := range result {
 		filtered[i] = &model.Coordinate{
-			Lat: coord[0],
-			Lon: coord[1],
+			ID:  coord.ID,
+			Lat: coord.Lat,
+			Lon: coord.Lon,
 		}
 	}
 

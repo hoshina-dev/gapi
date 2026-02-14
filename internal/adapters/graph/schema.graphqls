@@ -1,11 +1,13 @@
 scalar Map
 
 type Coordinate {
+  id: String!
   lat: Float!
   lon: Float!
 }
 
 input CoordinateInput {
+  id: String!
   lat: Float!
   lon: Float!
 }

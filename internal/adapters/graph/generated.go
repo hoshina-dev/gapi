@@ -58,6 +58,7 @@ type ComplexityRoot struct {
 	}
 
 	Coordinate struct {
+		ID  func(childComplexity int) int
 		Lat func(childComplexity int) int
 		Lon func(childComplexity int) int
 	}
@@ -138,6 +139,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.AdminArea.ParentCode(childComplexity), true
 
+	case "Coordinate.id":
+		if e.complexity.Coordinate.ID == nil {
+			break
+		}
+
+		return e.complexity.Coordinate.ID(childComplexity), true
 	case "Coordinate.lat":
 		if e.complexity.Coordinate.Lat == nil {
 			break
@@ -649,6 +656,35 @@ func (ec *executionContext) fieldContext_AdminArea_parentCode(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Coordinate_id(ctx context.Context, field graphql.CollectedField, obj *model.Coordinate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Coordinate_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Coordinate_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Coordinate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Coordinate_lat(ctx context.Context, field graphql.CollectedField, obj *model.Coordinate) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -952,6 +988,8 @@ func (ec *executionContext) fieldContext_Query_filterCoordinatesByBoundary(ctx c
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Coordinate_id(ctx, field)
 			case "lat":
 				return ec.fieldContext_Coordinate_lat(ctx, field)
 			case "lon":
@@ -2535,13 +2573,20 @@ func (ec *executionContext) unmarshalInputCoordinateInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lat", "lon"}
+	fieldsInOrder := [...]string{"id", "lat", "lon"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
 		case "lat":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lat"))
 			data, err := ec.unmarshalNFloat2float64(ctx, v)
@@ -2673,6 +2718,11 @@ func (ec *executionContext) _Coordinate(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Coordinate")
+		case "id":
+			out.Values[i] = ec._Coordinate_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "lat":
 			out.Values[i] = ec._Coordinate_lat(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
