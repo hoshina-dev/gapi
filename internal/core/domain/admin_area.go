@@ -8,3 +8,9 @@ type AdminArea struct {
 	ParentCode *string `json:"parent_code"`
 	Geometry   []byte  `json:"geom"`
 }
+
+type FilteredCoordinate struct {
+	Idx int
+	Lat float64
+	Lon float64
+}

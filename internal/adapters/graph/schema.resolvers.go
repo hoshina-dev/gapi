@@ -76,10 +76,12 @@ func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordin
 		return nil, err
 	}
 
-	// Convert CoordinateInput to service layer format
+	// Convert CoordinateInput to service layer format and create index-to-ID mapping
 	coords := make([][2]float64, len(coordinates))
+	idxToID := make(map[int]string, len(coordinates))
 	for i, coord := range coordinates {
 		coords[i] = [2]float64{coord.Lat, coord.Lon}
+		idxToID[i] = coord.ID
 	}
 
 	// Call service layer
@@ -93,12 +95,13 @@ func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordin
 		return nil, err
 	}
 
-	// Convert service layer result to GraphQL model
+	// Convert service layer result to GraphQL model using index mapping
 	filtered := make([]*model.Coordinate, len(result))
 	for i, coord := range result {
 		filtered[i] = &model.Coordinate{
-			Lat: coord[0],
-			Lon: coord[1],
+			ID:  idxToID[coord.Idx],
+			Lat: coord.Lat,
+			Lon: coord.Lon,
 		}
 	}
 

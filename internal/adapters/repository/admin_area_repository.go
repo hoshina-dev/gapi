@@ -175,7 +175,7 @@ func buildGIDWhereClause(gidColumn, code string, adminLevel int32) (whereClause 
 }
 
 // FilterCoordinatesByBoundary implements [ports.AdminAreaRepository].
-func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([][]float64, error) {
+func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([]*domain.FilteredCoordinate, error) {
 	query := queries[adminLevel]
 	if query.Table == "" {
 		return nil, errors.New("invalid admin level")
@@ -204,7 +204,7 @@ func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, c
 			input_coords(idx, lat, lon) AS (
 				VALUES %s
 			)
-		SELECT c.lat, c.lon
+		SELECT c.idx, c.lat, c.lon
 		FROM input_coords c, boundary b
 		WHERE ST_Contains(
 			b.geom,
@@ -214,6 +214,7 @@ func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, c
 	`, query.Table, whereClause, valuesSQL)
 
 	type Result struct {
+		Idx int
 		Lat float64
 		Lon float64
 	}
@@ -234,10 +235,14 @@ func (c *adminAreaRepository) FilterCoordinatesByBoundary(ctx context.Context, c
 		}
 	}
 
-	// Convert results to output format
-	output := make([][]float64, len(results))
+	// Convert results to domain format
+	output := make([]*domain.FilteredCoordinate, len(results))
 	for i, r := range results {
-		output[i] = []float64{r.Lat, r.Lon}
+		output[i] = &domain.FilteredCoordinate{
+			Idx: r.Idx,
+			Lat: r.Lat,
+			Lon: r.Lon,
+		}
 	}
 
 	return output, nil

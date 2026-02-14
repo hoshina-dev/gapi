@@ -36,6 +36,6 @@ func (c *adminAreaService) GetChildren(ctx context.Context, parentCode string, c
 }
 
 // FilterCoordinatesByBoundary implements [ports.AdminAreaService].
-func (c *adminAreaService) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([][]float64, error) {
+func (c *adminAreaService) FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([]*domain.FilteredCoordinate, error) {
 	return c.repo.FilterCoordinatesByBoundary(ctx, coordinates, boundaryID, adminLevel)
 }

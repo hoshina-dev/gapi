@@ -41,6 +41,7 @@ func TestGraphQLEndpoint_ValidQuery(t *testing.T) {
 		mock.Anything,
 		1,
 		int32(0),
+		mock.Anything,
 	).Return(expectedAdminArea, nil)
 
 	query := `{
@@ -88,6 +89,7 @@ func TestGraphQLEndpoint_QueryWithVariables(t *testing.T) {
 		mock.Anything,
 		"THA",
 		int32(0),
+		mock.Anything,
 	).Return(expectedAdminArea, nil)
 
 	query := `{
@@ -201,6 +203,7 @@ func TestGraphQLEndpoint_ComplexQuery(t *testing.T) {
 		mock.Anything,
 		"THA",
 		int32(1),
+		mock.Anything,
 	).Return(expectedAdminAreas, nil)
 
 	query := `{
