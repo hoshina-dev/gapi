@@ -34,41 +34,30 @@ const osmLineWithAddressQuery = `
 WITH road AS (
     SELECT
         name,
-        tags->'name:en' as name_en,
+        tags->'name:en' AS name_en,
         way,
-        ST_Transform(way, 4326)::geometry(LineString,4326) AS geom_4326
+        ST_Transform(way, 4326) AS geom_4326
     FROM planet_osm_line
-    WHERE name IS NOT NULL
-      AND tags ? 'name:en'
+    WHERE (name IS NOT NULL AND tags ? 'name:en')
       AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $1
     LIMIT $2
 )
-SELECT 
+SELECT
     r.name,
     r.name_en,
-    ST_AsGeoJSON(ST_Transform(r.way, 4326)) AS geom,
-    ST_AsGeoJSON(ST_Transform(ST_LineInterpolatePoint(r.way, 0.5), 4326)) AS centroid,
-    COALESCE(
-        (SELECT name_4 FROM admin4 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1),
-        NULL
-    ) as admin4,
-    COALESCE(
-        (SELECT name_3 FROM admin3 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1),
-        NULL
-    ) as admin3,
-    COALESCE(
-        (SELECT name_2 FROM admin2 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1),
-        NULL
-    ) as admin2,
-    COALESCE(
-        (SELECT name_1 FROM admin1 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1),
-        NULL
-    ) as admin1,
-    COALESCE(
-        (SELECT country FROM admin0 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1),
-        'Unknown'
-    ) as country
-FROM road r;
+    ST_AsGeoJSON(r.geom_4326) AS geom,
+    ST_AsGeoJSON(ST_LineInterpolatePoint(r.geom_4326, 0.5)) AS centroid,
+    COALESCE(a4.name_4, a3.name_3, a2.name_2, a1.name_1, a0.country) AS admin4,
+    COALESCE(a3.name_3, a2.name_2, a1.name_1, a0.country) AS admin3,
+    COALESCE(a2.name_2, a1.name_1, a0.country) AS admin2,
+    COALESCE(a1.name_1, a0.country) AS admin1,
+    COALESCE(a0.country, 'Unknown') AS country
+FROM road r
+LEFT JOIN LATERAL (SELECT name_4 FROM admin4 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a4 ON TRUE
+LEFT JOIN LATERAL (SELECT name_3 FROM admin3 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a3 ON TRUE
+LEFT JOIN LATERAL (SELECT name_2 FROM admin2 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a2 ON TRUE
+LEFT JOIN LATERAL (SELECT name_1 FROM admin1 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a1 ON TRUE
+LEFT JOIN LATERAL (SELECT country FROM admin0 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a0 ON TRUE;
 `
 
 const defaultOSMLineLimit = 20
@@ -126,8 +115,6 @@ func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit i
 
 func getAddressByRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error) {
 	searchPattern := fmt.Sprintf("%%%s%%", searchTerm)
-
-	// Use db.DB() to bypass GORM parameter parsing and preserve ? operator
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
@@ -138,10 +125,6 @@ func getAddressByRoadName(db *gorm.DB, ctx context.Context, searchTerm string, l
 		return nil, err
 	}
 	defer rows.Close()
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
 
 	var results []*domain.LineWithAddress
 	for rows.Next() {
