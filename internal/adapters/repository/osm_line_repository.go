@@ -22,7 +22,7 @@ const osmLineSearchQuery = `
 WITH filtered_lines AS (
   SELECT name, tags->'name:en' AS name_en, way
   FROM planet_osm_line
-  WHERE (name IS NOT NULL AND tags ? 'name:en')
+  WHERE (name IS NOT NULL OR tags ? 'name:en')
     AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $1
   LIMIT $2
 )
@@ -38,7 +38,7 @@ WITH road AS (
         way,
         ST_Transform(way, 4326) AS geom_4326
     FROM planet_osm_line
-    WHERE (name IS NOT NULL AND tags ? 'name:en')
+    WHERE (name IS NOT NULL OR tags ? 'name:en')
       AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $1
     LIMIT $2
 )
@@ -47,11 +47,11 @@ SELECT
     r.name_en,
     ST_AsGeoJSON(r.geom_4326) AS geom,
     ST_AsGeoJSON(ST_LineInterpolatePoint(r.geom_4326, 0.5)) AS centroid,
-    COALESCE(a4.name_4, a3.name_3, a2.name_2, a1.name_1, a0.country) AS admin4,
-    COALESCE(a3.name_3, a2.name_2, a1.name_1, a0.country) AS admin3,
-    COALESCE(a2.name_2, a1.name_1, a0.country) AS admin2,
-    COALESCE(a1.name_1, a0.country) AS admin1,
-    COALESCE(a0.country, 'Unknown') AS country
+    a4.name_4 AS admin4,
+    a3.name_3 AS admin3,
+    a2.name_2 AS admin2,
+    a1.name_1 AS admin1,
+    a0.country AS country
 FROM road r
 LEFT JOIN LATERAL (SELECT name_4 FROM admin4 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a4 ON TRUE
 LEFT JOIN LATERAL (SELECT name_3 FROM admin3 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a3 ON TRUE
