@@ -47,17 +47,25 @@ SELECT
     r.name_en,
     ST_AsGeoJSON(r.geom_4326) AS geom,
     ST_AsGeoJSON(ST_LineInterpolatePoint(r.geom_4326, 0.5)) AS centroid,
-    a4.name_4 AS admin4,
-    a3.name_3 AS admin3,
-    a2.name_2 AS admin2,
-    a1.name_1 AS admin1,
-    a0.country AS country
+    a.name_4 AS admin4,
+    a.name_3 AS admin3,
+    a.name_2 AS admin2,
+    a.name_1 AS admin1,
+    a.country
 FROM road r
-LEFT JOIN LATERAL (SELECT name_4 FROM admin4 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a4 ON TRUE
-LEFT JOIN LATERAL (SELECT name_3 FROM admin3 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a3 ON TRUE
-LEFT JOIN LATERAL (SELECT name_2 FROM admin2 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a2 ON TRUE
-LEFT JOIN LATERAL (SELECT name_1 FROM admin1 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a1 ON TRUE
-LEFT JOIN LATERAL (SELECT country FROM admin0 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326) LIMIT 1) a0 ON TRUE;
+LEFT JOIN LATERAL (
+    SELECT 4 AS lvl, name_4, name_3, name_2, name_1, country FROM admin4 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    UNION ALL
+    SELECT 3, NULL, name_3, name_2, name_1, country FROM admin3 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    UNION ALL
+    SELECT 2, NULL, NULL, name_2, name_1, country FROM admin2 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    UNION ALL
+    SELECT 1, NULL, NULL, NULL, name_1, country FROM admin1 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    UNION ALL
+    SELECT 0, NULL, NULL, NULL, NULL, country FROM admin0 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    ORDER BY lvl DESC
+    LIMIT 1
+) a ON TRUE;
 `
 
 const defaultOSMLineLimit = 20
