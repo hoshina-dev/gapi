@@ -65,8 +65,10 @@ type ComplexityRoot struct {
 	}
 
 	OSMLine struct {
+		Centroid func(childComplexity int) int
 		Geometry func(childComplexity int) int
 		Name     func(childComplexity int) int
+		NameEn   func(childComplexity int) int
 	}
 
 	Query struct {
@@ -169,6 +171,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Coordinate.Lon(childComplexity), true
 
+	case "OSMLine.centroid":
+		if e.complexity.OSMLine.Centroid == nil {
+			break
+		}
+
+		return e.complexity.OSMLine.Centroid(childComplexity), true
 	case "OSMLine.geometry":
 		if e.complexity.OSMLine.Geometry == nil {
 			break
@@ -181,6 +189,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.OSMLine.Name(childComplexity), true
+	case "OSMLine.nameEn":
+		if e.complexity.OSMLine.NameEn == nil {
+			break
+		}
+
+		return e.complexity.OSMLine.NameEn(childComplexity), true
 
 	case "Query.adminArea":
 		if e.complexity.Query.AdminArea == nil {
@@ -804,13 +818,42 @@ func (ec *executionContext) _OSMLine_name(ctx context.Context, field graphql.Col
 			return obj.Name, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalOString2ᚖstring,
 		true,
-		true,
+		false,
 	)
 }
 
 func (ec *executionContext) fieldContext_OSMLine_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OSMLine",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OSMLine_nameEn(ctx context.Context, field graphql.CollectedField, obj *domain.OSMLine) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_OSMLine_nameEn,
+		func(ctx context.Context) (any, error) {
+			return obj.NameEn, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_OSMLine_nameEn(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "OSMLine",
 		Field:      field,
@@ -847,6 +890,43 @@ func (ec *executionContext) fieldContext_OSMLine_geometry(_ context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OSMLine_centroid(ctx context.Context, field graphql.CollectedField, obj *domain.OSMLine) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_OSMLine_centroid,
+		func(ctx context.Context) (any, error) {
+			return obj.Centroid, nil
+		},
+		nil,
+		ec.marshalNCoordinate2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinate,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_OSMLine_centroid(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OSMLine",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Coordinate_id(ctx, field)
+			case "lat":
+				return ec.fieldContext_Coordinate_lat(ctx, field)
+			case "lon":
+				return ec.fieldContext_Coordinate_lon(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Coordinate", field.Name)
 		},
 	}
 	return fc, nil
@@ -1148,8 +1228,12 @@ func (ec *executionContext) fieldContext_Query_searchOSMLineByName(ctx context.C
 			switch field.Name {
 			case "name":
 				return ec.fieldContext_OSMLine_name(ctx, field)
+			case "nameEn":
+				return ec.fieldContext_OSMLine_nameEn(ctx, field)
 			case "geometry":
 				return ec.fieldContext_OSMLine_geometry(ctx, field)
+			case "centroid":
+				return ec.fieldContext_OSMLine_centroid(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type OSMLine", field.Name)
 		},
@@ -2925,9 +3009,8 @@ func (ec *executionContext) _OSMLine(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("OSMLine")
 		case "name":
 			out.Values[i] = ec._OSMLine_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
+		case "nameEn":
+			out.Values[i] = ec._OSMLine_nameEn(ctx, field, obj)
 		case "geometry":
 			field := field
 
@@ -2964,6 +3047,11 @@ func (ec *executionContext) _OSMLine(ctx context.Context, sel ast.SelectionSet, 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "centroid":
+			out.Values[i] = ec._OSMLine_centroid(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

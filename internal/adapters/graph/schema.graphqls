@@ -22,8 +22,10 @@ type AdminArea {
 }
 
 type OSMLine {
-  name: String!
+  name: String
+  nameEn: String
   geometry: Map!
+  centroid: Coordinate!
 }
 
 type Query {
