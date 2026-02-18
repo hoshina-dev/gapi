@@ -49,6 +49,14 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AdminAddress struct {
+		Admin1  func(childComplexity int) int
+		Admin2  func(childComplexity int) int
+		Admin3  func(childComplexity int) int
+		Admin4  func(childComplexity int) int
+		Country func(childComplexity int) int
+	}
+
 	AdminArea struct {
 		AdminLevel func(childComplexity int) int
 		Geometry   func(childComplexity int) int
@@ -64,6 +72,11 @@ type ComplexityRoot struct {
 		Lon func(childComplexity int) int
 	}
 
+	LineWithAddress struct {
+		Address func(childComplexity int) int
+		Line    func(childComplexity int) int
+	}
+
 	OSMLine struct {
 		Centroid func(childComplexity int) int
 		Geometry func(childComplexity int) int
@@ -77,7 +90,8 @@ type ComplexityRoot struct {
 		AdminAreas                  func(childComplexity int, adminLevel int32, tolerance *float64) int
 		ChildrenByCode              func(childComplexity int, parentCode string, childLevel int32, tolerance *float64) int
 		FilterCoordinatesByBoundary func(childComplexity int, coordinates []*model.CoordinateInput, boundaryID string) int
-		SearchOSMLineByName         func(childComplexity int, searchTerm string, limit *int32) int
+		GetAddressByRoadName        func(childComplexity int, searchTerm string, limit *int32) int
+		SearchRoadName              func(childComplexity int, searchTerm string, limit *int32) int
 	}
 }
 
@@ -93,7 +107,8 @@ type QueryResolver interface {
 	AdminAreaByCode(ctx context.Context, code string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
 	ChildrenByCode(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
 	FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([]*domain.Coordinate, error)
-	SearchOSMLineByName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.OSMLine, error)
+	SearchRoadName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.OSMLine, error)
+	GetAddressByRoadName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.LineWithAddress, error)
 }
 
 type executableSchema struct {
@@ -114,6 +129,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AdminAddress.admin1":
+		if e.complexity.AdminAddress.Admin1 == nil {
+			break
+		}
+
+		return e.complexity.AdminAddress.Admin1(childComplexity), true
+	case "AdminAddress.admin2":
+		if e.complexity.AdminAddress.Admin2 == nil {
+			break
+		}
+
+		return e.complexity.AdminAddress.Admin2(childComplexity), true
+	case "AdminAddress.admin3":
+		if e.complexity.AdminAddress.Admin3 == nil {
+			break
+		}
+
+		return e.complexity.AdminAddress.Admin3(childComplexity), true
+	case "AdminAddress.admin4":
+		if e.complexity.AdminAddress.Admin4 == nil {
+			break
+		}
+
+		return e.complexity.AdminAddress.Admin4(childComplexity), true
+	case "AdminAddress.country":
+		if e.complexity.AdminAddress.Country == nil {
+			break
+		}
+
+		return e.complexity.AdminAddress.Country(childComplexity), true
 
 	case "AdminArea.adminLevel":
 		if e.complexity.AdminArea.AdminLevel == nil {
@@ -170,6 +216,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Coordinate.Lon(childComplexity), true
+
+	case "LineWithAddress.address":
+		if e.complexity.LineWithAddress.Address == nil {
+			break
+		}
+
+		return e.complexity.LineWithAddress.Address(childComplexity), true
+	case "LineWithAddress.line":
+		if e.complexity.LineWithAddress.Line == nil {
+			break
+		}
+
+		return e.complexity.LineWithAddress.Line(childComplexity), true
 
 	case "OSMLine.centroid":
 		if e.complexity.OSMLine.Centroid == nil {
@@ -251,17 +310,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.FilterCoordinatesByBoundary(childComplexity, args["coordinates"].([]*model.CoordinateInput), args["boundaryId"].(string)), true
-	case "Query.searchOSMLineByName":
-		if e.complexity.Query.SearchOSMLineByName == nil {
+	case "Query.getAddressByRoadName":
+		if e.complexity.Query.GetAddressByRoadName == nil {
 			break
 		}
 
-		args, err := ec.field_Query_searchOSMLineByName_args(ctx, rawArgs)
+		args, err := ec.field_Query_getAddressByRoadName_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.SearchOSMLineByName(childComplexity, args["searchTerm"].(string), args["limit"].(*int32)), true
+		return e.complexity.Query.GetAddressByRoadName(childComplexity, args["searchTerm"].(string), args["limit"].(*int32)), true
+	case "Query.searchRoadName":
+		if e.complexity.Query.SearchRoadName == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchRoadName_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SearchRoadName(childComplexity, args["searchTerm"].(string), args["limit"].(*int32)), true
 
 	}
 	return 0, false
@@ -479,7 +549,23 @@ func (ec *executionContext) field_Query_filterCoordinatesByBoundary_args(ctx con
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_searchOSMLineByName_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_getAddressByRoadName_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "searchTerm", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["searchTerm"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchRoadName_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "searchTerm", ec.unmarshalNString2string)
@@ -546,6 +632,151 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AdminAddress_country(ctx context.Context, field graphql.CollectedField, obj *domain.AdminAddress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AdminAddress_country,
+		func(ctx context.Context) (any, error) {
+			return obj.Country, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AdminAddress_country(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AdminAddress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AdminAddress_admin1(ctx context.Context, field graphql.CollectedField, obj *domain.AdminAddress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AdminAddress_admin1,
+		func(ctx context.Context) (any, error) {
+			return obj.Admin1, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AdminAddress_admin1(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AdminAddress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AdminAddress_admin2(ctx context.Context, field graphql.CollectedField, obj *domain.AdminAddress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AdminAddress_admin2,
+		func(ctx context.Context) (any, error) {
+			return obj.Admin2, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AdminAddress_admin2(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AdminAddress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AdminAddress_admin3(ctx context.Context, field graphql.CollectedField, obj *domain.AdminAddress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AdminAddress_admin3,
+		func(ctx context.Context) (any, error) {
+			return obj.Admin3, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AdminAddress_admin3(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AdminAddress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AdminAddress_admin4(ctx context.Context, field graphql.CollectedField, obj *domain.AdminAddress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AdminAddress_admin4,
+		func(ctx context.Context) (any, error) {
+			return obj.Admin4, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AdminAddress_admin4(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AdminAddress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _AdminArea_id(ctx context.Context, field graphql.CollectedField, obj *domain.AdminArea) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -803,6 +1034,86 @@ func (ec *executionContext) fieldContext_Coordinate_lon(_ context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LineWithAddress_line(ctx context.Context, field graphql.CollectedField, obj *domain.LineWithAddress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LineWithAddress_line,
+		func(ctx context.Context) (any, error) {
+			return obj.Line, nil
+		},
+		nil,
+		ec.marshalNOSMLine2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLine,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LineWithAddress_line(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LineWithAddress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_OSMLine_name(ctx, field)
+			case "nameEn":
+				return ec.fieldContext_OSMLine_nameEn(ctx, field)
+			case "geometry":
+				return ec.fieldContext_OSMLine_geometry(ctx, field)
+			case "centroid":
+				return ec.fieldContext_OSMLine_centroid(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OSMLine", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LineWithAddress_address(ctx context.Context, field graphql.CollectedField, obj *domain.LineWithAddress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LineWithAddress_address,
+		func(ctx context.Context) (any, error) {
+			return obj.Address, nil
+		},
+		nil,
+		ec.marshalOAdminAddress2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminAddress,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LineWithAddress_address(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LineWithAddress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "country":
+				return ec.fieldContext_AdminAddress_country(ctx, field)
+			case "admin1":
+				return ec.fieldContext_AdminAddress_admin1(ctx, field)
+			case "admin2":
+				return ec.fieldContext_AdminAddress_admin2(ctx, field)
+			case "admin3":
+				return ec.fieldContext_AdminAddress_admin3(ctx, field)
+			case "admin4":
+				return ec.fieldContext_AdminAddress_admin4(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AdminAddress", field.Name)
 		},
 	}
 	return fc, nil
@@ -1201,15 +1512,15 @@ func (ec *executionContext) fieldContext_Query_filterCoordinatesByBoundary(ctx c
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_searchOSMLineByName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_searchRoadName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_searchOSMLineByName,
+		ec.fieldContext_Query_searchRoadName,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().SearchOSMLineByName(ctx, fc.Args["searchTerm"].(string), fc.Args["limit"].(*int32))
+			return ec.resolvers.Query().SearchRoadName(ctx, fc.Args["searchTerm"].(string), fc.Args["limit"].(*int32))
 		},
 		nil,
 		ec.marshalNOSMLine2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLineᚄ,
@@ -1218,7 +1529,7 @@ func (ec *executionContext) _Query_searchOSMLineByName(ctx context.Context, fiel
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_searchOSMLineByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_searchRoadName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1245,7 +1556,54 @@ func (ec *executionContext) fieldContext_Query_searchOSMLineByName(ctx context.C
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_searchOSMLineByName_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_searchRoadName_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getAddressByRoadName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getAddressByRoadName,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().GetAddressByRoadName(ctx, fc.Args["searchTerm"].(string), fc.Args["limit"].(*int32))
+		},
+		nil,
+		ec.marshalNLineWithAddress2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐLineWithAddressᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getAddressByRoadName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "line":
+				return ec.fieldContext_LineWithAddress_line(ctx, field)
+			case "address":
+				return ec.fieldContext_LineWithAddress_address(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LineWithAddress", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getAddressByRoadName_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2855,6 +3213,50 @@ func (ec *executionContext) unmarshalInputCoordinateInput(ctx context.Context, o
 
 // region    **************************** object.gotpl ****************************
 
+var adminAddressImplementors = []string{"AdminAddress"}
+
+func (ec *executionContext) _AdminAddress(ctx context.Context, sel ast.SelectionSet, obj *domain.AdminAddress) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, adminAddressImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AdminAddress")
+		case "country":
+			out.Values[i] = ec._AdminAddress_country(ctx, field, obj)
+		case "admin1":
+			out.Values[i] = ec._AdminAddress_admin1(ctx, field, obj)
+		case "admin2":
+			out.Values[i] = ec._AdminAddress_admin2(ctx, field, obj)
+		case "admin3":
+			out.Values[i] = ec._AdminAddress_admin3(ctx, field, obj)
+		case "admin4":
+			out.Values[i] = ec._AdminAddress_admin4(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var adminAreaImplementors = []string{"AdminArea"}
 
 func (ec *executionContext) _AdminArea(ctx context.Context, sel ast.SelectionSet, obj *domain.AdminArea) graphql.Marshaler {
@@ -2973,6 +3375,47 @@ func (ec *executionContext) _Coordinate(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var lineWithAddressImplementors = []string{"LineWithAddress"}
+
+func (ec *executionContext) _LineWithAddress(ctx context.Context, sel ast.SelectionSet, obj *domain.LineWithAddress) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lineWithAddressImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LineWithAddress")
+		case "line":
+			out.Values[i] = ec._LineWithAddress_line(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "address":
+			out.Values[i] = ec._LineWithAddress_address(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3198,7 +3641,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "searchOSMLineByName":
+		case "searchRoadName":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -3207,7 +3650,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_searchOSMLineByName(ctx, field)
+				res = ec._Query_searchRoadName(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getAddressByRoadName":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getAddressByRoadName(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -3794,6 +4259,60 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) marshalNLineWithAddress2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐLineWithAddressᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.LineWithAddress) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLineWithAddress2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐLineWithAddress(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLineWithAddress2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐLineWithAddress(ctx context.Context, sel ast.SelectionSet, v *domain.LineWithAddress) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LineWithAddress(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v any) (map[string]any, error) {
 	res, err := graphql.UnmarshalMap(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4137,6 +4656,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalOAdminAddress2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminAddress(ctx context.Context, sel ast.SelectionSet, v *domain.AdminAddress) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AdminAddress(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOAdminArea2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐAdminArea(ctx context.Context, sel ast.SelectionSet, v *domain.AdminArea) graphql.Marshaler {

@@ -15,5 +15,6 @@ type AdminAreaService interface {
 }
 
 type OSMLineService interface {
-	SearchByName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error)
+	SearchRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error)
+	GetAddressByRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error)
 }

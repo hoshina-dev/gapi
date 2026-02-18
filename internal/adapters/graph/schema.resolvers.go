@@ -109,14 +109,24 @@ func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordin
 	return result, nil
 }
 
-// SearchOSMLineByName is the resolver for the searchOSMLineByName field.
-func (r *queryResolver) SearchOSMLineByName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.OSMLine, error) {
+// SearchRoadName is the resolver for the searchRoadName field.
+func (r *queryResolver) SearchRoadName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.OSMLine, error) {
 	limitVal := 20
 	if limit != nil && *limit > 0 {
 		limitVal = int(*limit)
 	}
 
-	return r.osmLineService.SearchByName(ctx, searchTerm, limitVal)
+	return r.osmLineService.SearchRoadName(ctx, searchTerm, limitVal)
+}
+
+// GetAddressByRoadName is the resolver for the getAddressByRoadName field.
+func (r *queryResolver) GetAddressByRoadName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.LineWithAddress, error) {
+	limitVal := 20
+	if limit != nil && *limit > 0 {
+		limitVal = int(*limit)
+	}
+
+	return r.osmLineService.GetAddressByRoadName(ctx, searchTerm, limitVal)
 }
 
 // AdminArea returns AdminAreaResolver implementation.

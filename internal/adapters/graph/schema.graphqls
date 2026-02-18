@@ -28,6 +28,19 @@ type OSMLine {
   centroid: Coordinate!
 }
 
+type AdminAddress {
+  country: String
+  admin1: String
+  admin2: String
+  admin3: String
+  admin4: String
+}
+
+type LineWithAddress {
+  line: OSMLine!
+  address: AdminAddress
+}
+
 type Query {
   adminAreas(
     adminLevel: Int!
@@ -57,8 +70,13 @@ type Query {
     boundaryId: String!
   ): [Coordinate!]!
 
-  searchOSMLineByName(
+  searchRoadName(
     searchTerm: String!
     limit: Int = 20
   ): [OSMLine!]!
+
+  getAddressByRoadName(
+    searchTerm: String!
+    limit: Int = 20
+  ): [LineWithAddress!]!
 }

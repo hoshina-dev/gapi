@@ -15,7 +15,12 @@ func NewOSMLineService(repo ports.OSMLineRepository) ports.OSMLineService {
 	return &osmLineService{repo: repo}
 }
 
-// SearchByName implements ports.OSMLineService.
-func (s *osmLineService) SearchByName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error) {
-	return s.repo.SearchByName(ctx, searchTerm, limit)
+// SearchRoadName implements ports.OSMLineService.
+func (s *osmLineService) SearchRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error) {
+	return s.repo.SearchRoadName(ctx, searchTerm, limit)
+}
+
+// GetAddressByRoadName implements ports.OSMLineService.
+func (s *osmLineService) GetAddressByRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error) {
+	return s.repo.GetAddressByRoadName(ctx, searchTerm, limit)
 }
