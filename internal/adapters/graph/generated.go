@@ -41,6 +41,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	AdminArea() AdminAreaResolver
+	OSMLine() OSMLineResolver
 	Query() QueryResolver
 }
 
@@ -63,24 +64,34 @@ type ComplexityRoot struct {
 		Lon func(childComplexity int) int
 	}
 
+	OSMLine struct {
+		Geometry func(childComplexity int) int
+		Name     func(childComplexity int) int
+	}
+
 	Query struct {
 		AdminArea                   func(childComplexity int, id string, adminLevel int32, tolerance *float64) int
 		AdminAreaByCode             func(childComplexity int, code string, adminLevel int32, tolerance *float64) int
 		AdminAreas                  func(childComplexity int, adminLevel int32, tolerance *float64) int
 		ChildrenByCode              func(childComplexity int, parentCode string, childLevel int32, tolerance *float64) int
 		FilterCoordinatesByBoundary func(childComplexity int, coordinates []*model.CoordinateInput, boundaryID string) int
+		SearchOSMLineByName         func(childComplexity int, searchTerm string, limit *int32) int
 	}
 }
 
 type AdminAreaResolver interface {
 	Geometry(ctx context.Context, obj *domain.AdminArea) (map[string]any, error)
 }
+type OSMLineResolver interface {
+	Geometry(ctx context.Context, obj *domain.OSMLine) (map[string]any, error)
+}
 type QueryResolver interface {
 	AdminAreas(ctx context.Context, adminLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
 	AdminArea(ctx context.Context, id string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
 	AdminAreaByCode(ctx context.Context, code string, adminLevel int32, tolerance *float64) (*domain.AdminArea, error)
 	ChildrenByCode(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
-	FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([]*model.Coordinate, error)
+	FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([]*domain.Coordinate, error)
+	SearchOSMLineByName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.OSMLine, error)
 }
 
 type executableSchema struct {
@@ -158,6 +169,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Coordinate.Lon(childComplexity), true
 
+	case "OSMLine.geometry":
+		if e.complexity.OSMLine.Geometry == nil {
+			break
+		}
+
+		return e.complexity.OSMLine.Geometry(childComplexity), true
+	case "OSMLine.name":
+		if e.complexity.OSMLine.Name == nil {
+			break
+		}
+
+		return e.complexity.OSMLine.Name(childComplexity), true
+
 	case "Query.adminArea":
 		if e.complexity.Query.AdminArea == nil {
 			break
@@ -213,6 +237,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.FilterCoordinatesByBoundary(childComplexity, args["coordinates"].([]*model.CoordinateInput), args["boundaryId"].(string)), true
+	case "Query.searchOSMLineByName":
+		if e.complexity.Query.SearchOSMLineByName == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchOSMLineByName_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SearchOSMLineByName(childComplexity, args["searchTerm"].(string), args["limit"].(*int32)), true
 
 	}
 	return 0, false
@@ -427,6 +462,22 @@ func (ec *executionContext) field_Query_filterCoordinatesByBoundary_args(ctx con
 		return nil, err
 	}
 	args["boundaryId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchOSMLineByName_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "searchTerm", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["searchTerm"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -656,7 +707,7 @@ func (ec *executionContext) fieldContext_AdminArea_parentCode(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Coordinate_id(ctx context.Context, field graphql.CollectedField, obj *model.Coordinate) (ret graphql.Marshaler) {
+func (ec *executionContext) _Coordinate_id(ctx context.Context, field graphql.CollectedField, obj *domain.Coordinate) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -685,7 +736,7 @@ func (ec *executionContext) fieldContext_Coordinate_id(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Coordinate_lat(ctx context.Context, field graphql.CollectedField, obj *model.Coordinate) (ret graphql.Marshaler) {
+func (ec *executionContext) _Coordinate_lat(ctx context.Context, field graphql.CollectedField, obj *domain.Coordinate) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -714,7 +765,7 @@ func (ec *executionContext) fieldContext_Coordinate_lat(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Coordinate_lon(ctx context.Context, field graphql.CollectedField, obj *model.Coordinate) (ret graphql.Marshaler) {
+func (ec *executionContext) _Coordinate_lon(ctx context.Context, field graphql.CollectedField, obj *domain.Coordinate) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -738,6 +789,64 @@ func (ec *executionContext) fieldContext_Coordinate_lon(_ context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OSMLine_name(ctx context.Context, field graphql.CollectedField, obj *domain.OSMLine) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_OSMLine_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_OSMLine_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OSMLine",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OSMLine_geometry(ctx context.Context, field graphql.CollectedField, obj *domain.OSMLine) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_OSMLine_geometry,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.OSMLine().Geometry(ctx, obj)
+		},
+		nil,
+		ec.marshalNMap2map,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_OSMLine_geometry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OSMLine",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
 		},
 	}
 	return fc, nil
@@ -974,7 +1083,7 @@ func (ec *executionContext) _Query_filterCoordinatesByBoundary(ctx context.Conte
 			return ec.resolvers.Query().FilterCoordinatesByBoundary(ctx, fc.Args["coordinates"].([]*model.CoordinateInput), fc.Args["boundaryId"].(string))
 		},
 		nil,
-		ec.marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateᚄ,
+		ec.marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinateᚄ,
 		true,
 		true,
 	)
@@ -1006,6 +1115,53 @@ func (ec *executionContext) fieldContext_Query_filterCoordinatesByBoundary(ctx c
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_filterCoordinatesByBoundary_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_searchOSMLineByName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_searchOSMLineByName,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().SearchOSMLineByName(ctx, fc.Args["searchTerm"].(string), fc.Args["limit"].(*int32))
+		},
+		nil,
+		ec.marshalNOSMLine2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLineᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_searchOSMLineByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_OSMLine_name(ctx, field)
+			case "geometry":
+				return ec.fieldContext_OSMLine_geometry(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OSMLine", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchOSMLineByName_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2709,7 +2865,7 @@ func (ec *executionContext) _AdminArea(ctx context.Context, sel ast.SelectionSet
 
 var coordinateImplementors = []string{"Coordinate"}
 
-func (ec *executionContext) _Coordinate(ctx context.Context, sel ast.SelectionSet, obj *model.Coordinate) graphql.Marshaler {
+func (ec *executionContext) _Coordinate(ctx context.Context, sel ast.SelectionSet, obj *domain.Coordinate) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, coordinateImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -2733,6 +2889,81 @@ func (ec *executionContext) _Coordinate(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var oSMLineImplementors = []string{"OSMLine"}
+
+func (ec *executionContext) _OSMLine(ctx context.Context, sel ast.SelectionSet, obj *domain.OSMLine) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, oSMLineImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OSMLine")
+		case "name":
+			out.Values[i] = ec._OSMLine_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "geometry":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OSMLine_geometry(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2867,6 +3098,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_filterCoordinatesByBoundary(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "searchOSMLineByName":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchOSMLineByName(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -3315,7 +3568,7 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Coordinate) graphql.Marshaler {
+func (ec *executionContext) marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinateᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.Coordinate) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3339,7 +3592,7 @@ func (ec *executionContext) marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑde
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCoordinate2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinate(ctx, sel, v[i])
+			ret[i] = ec.marshalNCoordinate2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinate(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3359,7 +3612,7 @@ func (ec *executionContext) marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑde
 	return ret
 }
 
-func (ec *executionContext) marshalNCoordinate2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋadaptersᚋgraphᚋmodelᚐCoordinate(ctx context.Context, sel ast.SelectionSet, v *model.Coordinate) graphql.Marshaler {
+func (ec *executionContext) marshalNCoordinate2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinate(ctx context.Context, sel ast.SelectionSet, v *domain.Coordinate) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -3473,6 +3726,60 @@ func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNOSMLine2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLineᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.OSMLine) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOSMLine2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLine(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNOSMLine2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLine(ctx context.Context, sel ast.SelectionSet, v *domain.OSMLine) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._OSMLine(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
@@ -3796,6 +4103,24 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	_ = sel
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint32(ctx context.Context, v any) (*int32, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt32(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.SelectionSet, v *int32) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalInt32(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

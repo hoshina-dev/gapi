@@ -13,3 +13,7 @@ type AdminAreaRepository interface {
 	GetChildren(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
 	FilterCoordinatesByBoundary(ctx context.Context, coordinates [][2]float64, boundaryID string, adminLevel int32) ([]*domain.FilteredCoordinate, error)
 }
+
+type OSMLineRepository interface {
+	SearchByName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error)
+}

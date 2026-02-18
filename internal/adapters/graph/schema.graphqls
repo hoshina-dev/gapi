@@ -21,6 +21,11 @@ type AdminArea {
   parentCode: String
 }
 
+type OSMLine {
+  name: String!
+  geometry: Map!
+}
+
 type Query {
   adminAreas(
     adminLevel: Int!
@@ -49,4 +54,9 @@ type Query {
     coordinates: [CoordinateInput!]!
     boundaryId: String!
   ): [Coordinate!]!
+
+  searchOSMLineByName(
+    searchTerm: String!
+    limit: Int = 20
+  ): [OSMLine!]!
 }
