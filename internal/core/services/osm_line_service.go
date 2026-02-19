@@ -24,3 +24,8 @@ func (s *osmLineService) SearchRoadName(ctx context.Context, searchTerm string, 
 func (s *osmLineService) GetAddressByRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error) {
 	return s.repo.GetAddressByRoadName(ctx, searchTerm, limit)
 }
+
+// FindNearbyRoads implements ports.OSMLineService.
+func (s *osmLineService) FindNearbyRoads(ctx context.Context, lat float64, lon float64, radius float64, limit int) ([]*domain.OSMLine, error) {
+	return s.repo.FindNearbyRoads(ctx, lat, lon, radius, limit)
+}

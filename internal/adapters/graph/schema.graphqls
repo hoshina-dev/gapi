@@ -79,4 +79,11 @@ type Query {
     searchTerm: String!
     limit: Int = 20
   ): [LineWithAddress!]!
+
+  nearbyRoads(
+    lat: Float!
+    lon: Float!
+    radius: Float!
+    limit: Int = 20
+  ): [OSMLine!]!
 }

@@ -17,4 +17,5 @@ type AdminAreaRepository interface {
 type OSMLineRepository interface {
 	SearchRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error)
 	GetAddressByRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error)
+	FindNearbyRoads(ctx context.Context, lat float64, lon float64, radius float64, limit int) ([]*domain.OSMLine, error)
 }

@@ -129,6 +129,16 @@ func (r *queryResolver) GetAddressByRoadName(ctx context.Context, searchTerm str
 	return r.osmLineService.GetAddressByRoadName(ctx, searchTerm, limitVal)
 }
 
+// NearbyRoads is the resolver for the nearbyRoads field.
+func (r *queryResolver) NearbyRoads(ctx context.Context, lat float64, lon float64, radius float64, limit *int32) ([]*domain.OSMLine, error) {
+	limitVal := 20
+	if limit != nil && *limit > 0 {
+		limitVal = int(*limit)
+	}
+
+	return r.osmLineService.FindNearbyRoads(ctx, lat, lon, radius, limitVal)
+}
+
 // AdminArea returns AdminAreaResolver implementation.
 func (r *Resolver) AdminArea() AdminAreaResolver { return &adminAreaResolver{r} }
 

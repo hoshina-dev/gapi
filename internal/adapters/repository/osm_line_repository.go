@@ -88,6 +88,11 @@ func (r *osmLineRepository) GetAddressByRoadName(ctx context.Context, searchTerm
 	return getAddressByRoadName(r.db, ctx, searchTerm, limit)
 }
 
+func (r *osmLineRepository) FindNearbyRoads(ctx context.Context, lat float64, lon float64, radius float64, limit int) ([]*domain.OSMLine, error) {
+	// TODO: Implementation pending
+	return nil, nil
+}
+
 // searchRoadName executes the OSM line search query and returns domain models
 func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error) {
 	searchPattern := fmt.Sprintf("%%%s%%", searchTerm)
