@@ -68,6 +68,26 @@ LEFT JOIN LATERAL (
 ) a ON TRUE;
 `
 
+const osmLineNearbyQuery = `
+WITH pt AS (
+    SELECT ST_Transform(
+        ST_SetSRID(ST_MakePoint($1, $2), 4326),
+        3857
+    ) AS geom
+)
+SELECT 
+    l.name,
+    l.tags->'name:en' AS name_en,
+    ST_AsGeoJSON(ST_Transform(l.way, 4326)) AS geom,
+    ST_AsGeoJSON(ST_Transform(ST_LineInterpolatePoint(l.way, 0.5), 4326)) AS centroid
+FROM planet_osm_line l
+CROSS JOIN pt
+WHERE ST_DWithin(l.way, pt.geom, $3)
+AND (l.name IS NOT NULL OR l.tags->'name:en' IS NOT NULL)
+ORDER BY ST_Distance(l.way, pt.geom) ASC
+LIMIT $4;
+`
+
 const defaultOSMLineLimit = 20
 
 // SearchRoadName implements ports.OSMLineRepository.
@@ -89,8 +109,10 @@ func (r *osmLineRepository) GetAddressByRoadName(ctx context.Context, searchTerm
 }
 
 func (r *osmLineRepository) FindNearbyRoads(ctx context.Context, lat float64, lon float64, radius float64, limit int) ([]*domain.OSMLine, error) {
-	// TODO: Implementation pending
-	return nil, nil
+	if limit <= 0 {
+		limit = defaultOSMLineLimit
+	}
+	return findNearbyRoads(r.db, ctx, lat, lon, radius, limit)
 }
 
 // searchRoadName executes the OSM line search query and returns domain models
@@ -150,4 +172,21 @@ func getAddressByRoadName(db *gorm.DB, ctx context.Context, searchTerm string, l
 	}
 
 	return results, nil
+}
+
+func findNearbyRoads(db *gorm.DB, ctx context.Context, lat float64, lon float64, radius float64, limit int) ([]*domain.OSMLine, error) {
+	var results []*models.OSMLineSearchQuery
+
+	if err := db.WithContext(ctx).
+		Raw(osmLineNearbyQuery, lon, lat, radius, limit).
+		Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	domainResults := make([]*domain.OSMLine, len(results))
+	for i, result := range results {
+		domainResults[i] = result.ToDomain()
+	}
+
+	return domainResults, nil
 }
