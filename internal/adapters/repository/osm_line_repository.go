@@ -88,30 +88,17 @@ ORDER BY ST_Distance(l.way, pt.geom) ASC
 LIMIT $4;
 `
 
-const defaultOSMLineLimit = 20
-
 // SearchRoadName implements ports.OSMLineRepository.
 func (r *osmLineRepository) SearchRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error) {
-	if limit <= 0 {
-		limit = defaultOSMLineLimit
-	}
-
 	return searchRoadName(r.db, ctx, searchTerm, limit)
 }
 
 // GetAddressByRoadName searches for OSM lines by name and returns address information
 func (r *osmLineRepository) GetAddressByRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error) {
-	if limit <= 0 {
-		limit = defaultOSMLineLimit
-	}
-
 	return getAddressByRoadName(r.db, ctx, searchTerm, limit)
 }
 
 func (r *osmLineRepository) FindNearbyRoads(ctx context.Context, lat float64, lon float64, radius float64, limit int) ([]*domain.OSMLine, error) {
-	if limit <= 0 {
-		limit = defaultOSMLineLimit
-	}
 	return findNearbyRoads(r.db, ctx, lat, lon, radius, limit)
 }
 
