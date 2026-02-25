@@ -135,7 +135,7 @@ func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit i
 		return nil, err
 	}
 
-	var results []*domain.OSMLine
+	results := make([]*domain.OSMLine, 0, limit)
 	for rows.Next() {
 		var qr models.OSMLineSearchQuery
 		err := rows.Scan(&qr.Name, &qr.NameEn, &qr.Geometry, &qr.Centroid)
