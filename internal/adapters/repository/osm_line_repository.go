@@ -118,18 +118,16 @@ func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit i
 	}
 	defer rows.Close()
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
 	results := make([]*domain.OSMLine, 0, limit)
 	for rows.Next() {
 		var qr models.OSMLineSearchQuery
-		err := rows.Scan(&qr.Name, &qr.NameEn, &qr.Geometry, &qr.Centroid)
-		if err != nil {
+		if err := rows.Scan(&qr.Name, &qr.NameEn, &qr.Geometry, &qr.Centroid); err != nil {
 			return nil, err
 		}
 		results = append(results, qr.ToDomain())
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return results, nil
@@ -151,11 +149,13 @@ func getAddressByRoadName(db *gorm.DB, ctx context.Context, searchTerm string, l
 	var results []*domain.LineWithAddress
 	for rows.Next() {
 		var qr models.OSMLineAddressQuery
-		err := rows.Scan(&qr.Name, &qr.NameEn, &qr.Geometry, &qr.Centroid, &qr.Admin4, &qr.Admin3, &qr.Admin2, &qr.Admin1, &qr.Country)
-		if err != nil {
+		if err := rows.Scan(&qr.Name, &qr.NameEn, &qr.Geometry, &qr.Centroid, &qr.Admin4, &qr.Admin3, &qr.Admin2, &qr.Admin1, &qr.Country); err != nil {
 			return nil, err
 		}
 		results = append(results, qr.ToDomain())
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return results, nil
