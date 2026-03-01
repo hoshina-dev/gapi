@@ -31,6 +31,19 @@ SELECT name, name_en, ST_AsGeoJSON(ST_Transform(way, 4326)) AS geom, ST_AsGeoJSO
 FROM filtered_lines;
 `
 
+const osmLineSearchQueryTrgm = `
+WITH filtered_lines AS (
+  SELECT name, tags->'name:en' AS name_en, way
+  FROM planet_osm_line
+  WHERE (name IS NOT NULL OR tags ? 'name:en')
+		AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) % $1
+		AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $2 ESCAPE '\'
+  LIMIT $3
+)
+SELECT name, name_en, ST_AsGeoJSON(ST_Transform(way, 4326)) AS geom, ST_AsGeoJSON(ST_Transform(ST_LineInterpolatePoint(way, 0.5), 4326)) AS centroid
+FROM filtered_lines;
+`
+
 const osmLineWithAddressQuery = `
 WITH road AS (
     SELECT
@@ -42,6 +55,45 @@ WITH road AS (
     WHERE (name IS NOT NULL OR tags ? 'name:en')
 	AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $1 ESCAPE '\'
     LIMIT $2
+)
+SELECT
+    r.name,
+    r.name_en,
+    ST_AsGeoJSON(r.geom_4326) AS geom,
+    ST_AsGeoJSON(ST_LineInterpolatePoint(r.geom_4326, 0.5)) AS centroid,
+    a.name_4 AS admin4,
+    a.name_3 AS admin3,
+    a.name_2 AS admin2,
+    a.name_1 AS admin1,
+    a.country
+FROM road r
+LEFT JOIN LATERAL (
+    SELECT 4 AS lvl, name_4, name_3, name_2, name_1, country FROM admin4 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    UNION ALL
+    SELECT 3, NULL, name_3, name_2, name_1, country FROM admin3 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    UNION ALL
+    SELECT 2, NULL, NULL, name_2, name_1, country FROM admin2 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    UNION ALL
+    SELECT 1, NULL, NULL, NULL, name_1, country FROM admin1 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    UNION ALL
+    SELECT 0, NULL, NULL, NULL, NULL, country FROM admin0 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    ORDER BY lvl DESC
+    LIMIT 1
+) a ON TRUE;
+`
+
+const osmLineWithAddressQueryTrgm = `
+WITH road AS (
+    SELECT
+        name,
+        tags->'name:en' AS name_en,
+        way,
+        ST_Transform(way, 4326) AS geom_4326
+    FROM planet_osm_line
+    WHERE (name IS NOT NULL OR tags ? 'name:en')
+	AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) % $1
+	AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $2 ESCAPE '\'
+    LIMIT $3
 )
 SELECT
     r.name,
@@ -90,7 +142,7 @@ LIMIT $4;
 `
 
 // ===== DEBUG ONLY — remove explainAnalyze and its two call sites when done =====
-func explainAnalyze(db *gorm.DB, ctx context.Context, baseQuery string, searchPattern string, limit int) {
+func explainAnalyze(db *gorm.DB, ctx context.Context, baseQuery string, args ...interface{}) {
 	explainQuery := fmt.Sprintf("EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) %s", baseQuery)
 
 	sqlDB, err := db.DB()
@@ -99,7 +151,7 @@ func explainAnalyze(db *gorm.DB, ctx context.Context, baseQuery string, searchPa
 		return
 	}
 
-	rows, err := sqlDB.QueryContext(ctx, explainQuery, searchPattern, limit)
+	rows, err := sqlDB.QueryContext(ctx, explainQuery, args...)
 	if err != nil {
 		log.Printf("[EXPLAIN ANALYZE ERROR] %v", err)
 		return
@@ -135,15 +187,24 @@ func (r *osmLineRepository) FindNearbyRoads(ctx context.Context, lat float64, lo
 // searchRoadName executes the OSM line search query and returns domain models
 func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error) {
 	searchPattern := fmt.Sprintf("%%%s%%", escapeLike(searchTerm))
-	explainAnalyze(db, ctx, osmLineSearchQuery, searchPattern, limit) // DEBUG
 
-	// Use db.DB() to bypass GORM parameter parsing and preserve ? operator
+	var query string
+	var args []interface{}
+	useTrigramSearch := len([]rune(searchTerm)) > 2 && isASCII(searchTerm)
+	if useTrigramSearch {
+		query = osmLineSearchQueryTrgm
+		args = []interface{}{searchTerm, searchPattern, limit}
+	} else {
+		query = osmLineSearchQuery
+		args = []interface{}{searchPattern, limit}
+	}
+	explainAnalyze(db, ctx, query, args...) // DEBUG
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := sqlDB.QueryContext(ctx, osmLineSearchQuery, searchPattern, limit)
+	rows, err := sqlDB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -166,13 +227,24 @@ func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit i
 
 func getAddressByRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error) {
 	searchPattern := fmt.Sprintf("%%%s%%", escapeLike(searchTerm))
-	explainAnalyze(db, ctx, osmLineWithAddressQuery, searchPattern, limit) // DEBUG
+
+	var query string
+	var args []interface{}
+	useTrigramSearch := len([]rune(searchTerm)) > 2 && isASCII(searchTerm)
+	if useTrigramSearch {
+		query = osmLineWithAddressQueryTrgm
+		args = []interface{}{searchTerm, searchPattern, limit}
+	} else {
+		query = osmLineWithAddressQuery
+		args = []interface{}{searchPattern, limit}
+	}
+	explainAnalyze(db, ctx, query, args...) // DEBUG
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := sqlDB.QueryContext(ctx, osmLineWithAddressQuery, searchPattern, limit)
+	rows, err := sqlDB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
