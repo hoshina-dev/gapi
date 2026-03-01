@@ -23,7 +23,11 @@ func main() {
 	cache := infrastructure.NewCache(redisClient)
 	countryRepo := repository.NewCacheAdminAreaRepository(repo, cache)
 	countryService := services.NewAdminAreaService(countryRepo)
-	resolver := graph.NewResolver(countryService)
+
+	osmLineRepo := repository.NewOSMLineRepository(db)
+	osmLineService := services.NewOSMLineService(osmLineRepo)
+
+	resolver := graph.NewResolver(countryService, osmLineService)
 
 	app := http.SetupRouter(resolver, cfg)
 

@@ -23,6 +23,15 @@ func (r *adminAreaResolver) Geometry(ctx context.Context, obj *domain.AdminArea)
 	return geom, nil
 }
 
+// Geometry is the resolver for the geometry field.
+func (r *oSMLineResolver) Geometry(ctx context.Context, obj *domain.OSMLine) (map[string]any, error) {
+	var geom map[string]any
+	if err := json.Unmarshal(obj.Geometry, &geom); err != nil {
+		return nil, err
+	}
+	return geom, nil
+}
+
 // AdminAreas is the resolver for the adminAreas field.
 func (r *queryResolver) AdminAreas(ctx context.Context, adminLevel int32, tolerance *float64) ([]*domain.AdminArea, error) {
 	validTolerance, err := validateTolerance(tolerance)
@@ -64,7 +73,7 @@ func (r *queryResolver) ChildrenByCode(ctx context.Context, parentCode string, c
 }
 
 // FilterCoordinatesByBoundary is the resolver for the filterCoordinatesByBoundary field.
-func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([]*model.Coordinate, error) {
+func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordinates []*model.CoordinateInput, boundaryID string) ([]*domain.Coordinate, error) {
 	// Parse and validate boundary ID
 	boundaryInfo, err := parseBoundaryID(boundaryID)
 	if err != nil {
@@ -97,24 +106,48 @@ func (r *queryResolver) FilterCoordinatesByBoundary(ctx context.Context, coordin
 		return nil, err
 	}
 
-	// Convert domain model back to GraphQL model
-	filtered := make([]*model.Coordinate, len(result))
-	for i, coord := range result {
-		filtered[i] = &model.Coordinate{
-			ID:  coord.ID,
-			Lat: coord.Lat,
-			Lon: coord.Lon,
-		}
+	return result, nil
+}
+
+// SearchRoadName is the resolver for the searchRoadName field.
+func (r *queryResolver) SearchRoadName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.OSMLine, error) {
+	limitVal := 20
+	if limit != nil && *limit > 0 {
+		limitVal = int(*limit)
 	}
 
-	return filtered, nil
+	return r.osmLineService.SearchRoadName(ctx, searchTerm, limitVal)
+}
+
+// GetAddressByRoadName is the resolver for the getAddressByRoadName field.
+func (r *queryResolver) GetAddressByRoadName(ctx context.Context, searchTerm string, limit *int32) ([]*domain.LineWithAddress, error) {
+	limitVal := 20
+	if limit != nil && *limit > 0 {
+		limitVal = int(*limit)
+	}
+
+	return r.osmLineService.GetAddressByRoadName(ctx, searchTerm, limitVal)
+}
+
+// NearbyRoads is the resolver for the nearbyRoads field.
+func (r *queryResolver) NearbyRoads(ctx context.Context, lat float64, lon float64, radius float64, limit *int32) ([]*domain.OSMLine, error) {
+	limitVal := 20
+	if limit != nil && *limit > 0 {
+		limitVal = int(*limit)
+	}
+
+	return r.osmLineService.FindNearbyRoads(ctx, lat, lon, radius, limitVal)
 }
 
 // AdminArea returns AdminAreaResolver implementation.
 func (r *Resolver) AdminArea() AdminAreaResolver { return &adminAreaResolver{r} }
 
+// OSMLine returns OSMLineResolver implementation.
+func (r *Resolver) OSMLine() OSMLineResolver { return &oSMLineResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type adminAreaResolver struct{ *Resolver }
+type oSMLineResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

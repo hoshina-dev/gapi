@@ -13,3 +13,9 @@ type AdminAreaService interface {
 	GetChildren(ctx context.Context, parentCode string, childLevel int32, tolerance *float64) ([]*domain.AdminArea, error)
 	FilterCoordinatesByBoundary(ctx context.Context, coordinates []*domain.Coordinate, boundaryID string, adminLevel int32) ([]*domain.Coordinate, error)
 }
+
+type OSMLineService interface {
+	SearchRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error)
+	GetAddressByRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error)
+	FindNearbyRoads(ctx context.Context, lat float64, lon float64, radius float64, limit int) ([]*domain.OSMLine, error)
+}
