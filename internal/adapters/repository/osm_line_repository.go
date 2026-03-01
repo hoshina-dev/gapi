@@ -23,7 +23,7 @@ WITH filtered_lines AS (
   SELECT name, tags->'name:en' AS name_en, way
   FROM planet_osm_line
   WHERE (name IS NOT NULL OR tags ? 'name:en')
-    AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $1
+		AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $1 ESCAPE '\'
   LIMIT $2
 )
 SELECT name, name_en, ST_AsGeoJSON(ST_Transform(way, 4326)) AS geom, ST_AsGeoJSON(ST_Transform(ST_LineInterpolatePoint(way, 0.5), 4326)) AS centroid
@@ -39,7 +39,7 @@ WITH road AS (
         ST_Transform(way, 4326) AS geom_4326
     FROM planet_osm_line
     WHERE (name IS NOT NULL OR tags ? 'name:en')
-      AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $1
+	AND (COALESCE(name,'') || ' ' || COALESCE(tags->'name:en','')) ILIKE $1 ESCAPE '\'
     LIMIT $2
 )
 SELECT
@@ -104,7 +104,7 @@ func (r *osmLineRepository) FindNearbyRoads(ctx context.Context, lat float64, lo
 
 // searchRoadName executes the OSM line search query and returns domain models
 func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error) {
-	searchPattern := fmt.Sprintf("%%%s%%", searchTerm)
+	searchPattern := fmt.Sprintf("%%%s%%", escapeLike(searchTerm))
 
 	// Use db.DB() to bypass GORM parameter parsing and preserve ? operator
 	sqlDB, err := db.DB()
@@ -134,7 +134,7 @@ func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit i
 }
 
 func getAddressByRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error) {
-	searchPattern := fmt.Sprintf("%%%s%%", searchTerm)
+	searchPattern := fmt.Sprintf("%%%s%%", escapeLike(searchTerm))
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
