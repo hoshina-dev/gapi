@@ -68,15 +68,15 @@ SELECT
     a.country
 FROM road r
 LEFT JOIN LATERAL (
-    SELECT 4 AS lvl, name_4, name_3, name_2, name_1, country FROM admin4 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 4 AS lvl, name_4, name_3, name_2, name_1, country FROM admin4 WHERE ST_Intersects(geom, r.geom_4326)
     UNION ALL
-    SELECT 3, NULL, name_3, name_2, name_1, country FROM admin3 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 3, NULL, name_3, name_2, name_1, country FROM admin3 WHERE ST_Intersects(geom, r.geom_4326)
     UNION ALL
-    SELECT 2, NULL, NULL, name_2, name_1, country FROM admin2 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 2, NULL, NULL, name_2, name_1, country FROM admin2 WHERE ST_Intersects(geom, r.geom_4326)
     UNION ALL
-    SELECT 1, NULL, NULL, NULL, name_1, country FROM admin1 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 1, NULL, NULL, NULL, name_1, country FROM admin1 WHERE ST_Intersects(geom, r.geom_4326)
     UNION ALL
-    SELECT 0, NULL, NULL, NULL, NULL, country FROM admin0 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 0, NULL, NULL, NULL, NULL, country FROM admin0 WHERE ST_Intersects(geom, r.geom_4326)
     ORDER BY lvl DESC
     LIMIT 1
 ) a ON TRUE;
@@ -107,15 +107,15 @@ SELECT
     a.country
 FROM road r
 LEFT JOIN LATERAL (
-    SELECT 4 AS lvl, name_4, name_3, name_2, name_1, country FROM admin4 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 4 AS lvl, name_4, name_3, name_2, name_1, country FROM admin4 WHERE ST_Intersects(geom, r.geom_4326)
     UNION ALL
-    SELECT 3, NULL, name_3, name_2, name_1, country FROM admin3 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 3, NULL, name_3, name_2, name_1, country FROM admin3 WHERE ST_Intersects(geom, r.geom_4326)
     UNION ALL
-    SELECT 2, NULL, NULL, name_2, name_1, country FROM admin2 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 2, NULL, NULL, name_2, name_1, country FROM admin2 WHERE ST_Intersects(geom, r.geom_4326)
     UNION ALL
-    SELECT 1, NULL, NULL, NULL, name_1, country FROM admin1 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 1, NULL, NULL, NULL, name_1, country FROM admin1 WHERE ST_Intersects(geom, r.geom_4326)
     UNION ALL
-    SELECT 0, NULL, NULL, NULL, NULL, country FROM admin0 WHERE geom && r.geom_4326 AND ST_Intersects(geom, r.geom_4326)
+    SELECT 0, NULL, NULL, NULL, NULL, country FROM admin0 WHERE ST_Intersects(geom, r.geom_4326)
     ORDER BY lvl DESC
     LIMIT 1
 ) a ON TRUE;
