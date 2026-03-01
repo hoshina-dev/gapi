@@ -11,14 +11,14 @@ type AdminAddress struct {
 
 // OSMLine represents an OSM line feature from planet_osm_line table
 type OSMLine struct {
-	Name     *string     `json:"name"`
-	NameEn   *string     `json:"name_en"`
-	Geometry []byte      `json:"geom"`
-	Centroid *Coordinate `json:"centroid"`
+	Name     *string    `json:"name"`
+	NameEn   *string    `json:"name_en"`
+	Geometry []byte     `json:"geom"`
+	Centroid Coordinate `json:"centroid"`
 }
 
 // LineWithAddress is a composite type combining road data with administrative address information
 type LineWithAddress struct {
-	Line    *OSMLine      `json:"line"`
+	Line    OSMLine       `json:"line"`
 	Address *AdminAddress `json:"address"`
 }

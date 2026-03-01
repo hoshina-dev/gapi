@@ -1088,7 +1088,7 @@ func (ec *executionContext) _LineWithAddress_line(ctx context.Context, field gra
 			return obj.Line, nil
 		},
 		nil,
-		ec.marshalNOSMLine2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLine,
+		ec.marshalNOSMLine2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLine,
 		true,
 		true,
 	)
@@ -1255,7 +1255,7 @@ func (ec *executionContext) _OSMLine_centroid(ctx context.Context, field graphql
 			return obj.Centroid, nil
 		},
 		nil,
-		ec.marshalNCoordinate2ᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinate,
+		ec.marshalNCoordinate2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinate,
 		true,
 		true,
 	)
@@ -4233,6 +4233,10 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNCoordinate2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinate(ctx context.Context, sel ast.SelectionSet, v domain.Coordinate) graphql.Marshaler {
+	return ec._Coordinate(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNCoordinate2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐCoordinateᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.Coordinate) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -4445,6 +4449,10 @@ func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNOSMLine2githubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLine(ctx context.Context, sel ast.SelectionSet, v domain.OSMLine) graphql.Marshaler {
+	return ec._OSMLine(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNOSMLine2ᚕᚖgithubᚗcomᚋhoshinaᚑdevᚋgapiᚋinternalᚋcoreᚋdomainᚐOSMLineᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.OSMLine) graphql.Marshaler {

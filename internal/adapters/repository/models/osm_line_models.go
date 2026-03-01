@@ -33,13 +33,13 @@ type GeoJSONPoint struct {
 
 // ToDomain converts OSMLineSearchQuery to domain model
 func (q OSMLineSearchQuery) ToDomain() *domain.OSMLine {
-	var centroidCoord *domain.Coordinate
+	var centroidCoord domain.Coordinate // zero-value = empty Coordinate{} when absent
 
 	if len(q.Centroid) > 0 {
 		var geoJSON GeoJSONPoint
 		if err := json.Unmarshal(q.Centroid, &geoJSON); err == nil {
 			// GeoJSON coordinates are [lon, lat]
-			centroidCoord = &domain.Coordinate{
+			centroidCoord = domain.Coordinate{
 				Lat: geoJSON.Coordinates[1],
 				Lon: geoJSON.Coordinates[0],
 			}
@@ -56,13 +56,13 @@ func (q OSMLineSearchQuery) ToDomain() *domain.OSMLine {
 
 // ToDomainWithAddress converts OSMLineAddressQuery to domain model with address
 func (q OSMLineAddressQuery) ToDomain() *domain.LineWithAddress {
-	var centroidCoord *domain.Coordinate
+	var centroidCoord domain.Coordinate // zero-value = empty Coordinate{} when absent
 
 	if len(q.Centroid) > 0 {
 		var geoJSON GeoJSONPoint
 		if err := json.Unmarshal(q.Centroid, &geoJSON); err == nil {
 			// GeoJSON coordinates are [lon, lat]
-			centroidCoord = &domain.Coordinate{
+			centroidCoord = domain.Coordinate{
 				Lat: geoJSON.Coordinates[1],
 				Lon: geoJSON.Coordinates[0],
 			}
@@ -70,7 +70,7 @@ func (q OSMLineAddressQuery) ToDomain() *domain.LineWithAddress {
 	}
 
 	return &domain.LineWithAddress{
-		Line: &domain.OSMLine{
+		Line: domain.OSMLine{
 			Name:     q.Name,
 			NameEn:   q.NameEn,
 			Geometry: q.Geometry,
