@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/hoshina-dev/gapi/internal/adapters/repository/models"
 	"github.com/hoshina-dev/gapi/internal/core/domain"
@@ -88,6 +89,35 @@ ORDER BY ST_Distance(l.way, pt.geom) ASC
 LIMIT $4;
 `
 
+// ===== DEBUG ONLY — remove explainAnalyze and its two call sites when done =====
+func explainAnalyze(db *gorm.DB, ctx context.Context, baseQuery string, searchPattern string, limit int) {
+	explainQuery := fmt.Sprintf("EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) %s", baseQuery)
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Printf("[EXPLAIN ANALYZE ERROR] %v", err)
+		return
+	}
+
+	rows, err := sqlDB.QueryContext(ctx, explainQuery, searchPattern, limit)
+	if err != nil {
+		log.Printf("[EXPLAIN ANALYZE ERROR] %v", err)
+		return
+	}
+	defer rows.Close()
+
+	var result string
+	if rows.Next() {
+		if err := rows.Scan(&result); err != nil {
+			log.Printf("[EXPLAIN ANALYZE SCAN ERROR] %v", err)
+			return
+		}
+		log.Printf("[EXPLAIN ANALYZE RESULT]\n%s\n", result)
+	}
+}
+
+// ===== END DEBUG =====
+
 // SearchRoadName implements ports.OSMLineRepository.
 func (r *osmLineRepository) SearchRoadName(ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error) {
 	return searchRoadName(r.db, ctx, searchTerm, limit)
@@ -105,6 +135,7 @@ func (r *osmLineRepository) FindNearbyRoads(ctx context.Context, lat float64, lo
 // searchRoadName executes the OSM line search query and returns domain models
 func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit int) ([]*domain.OSMLine, error) {
 	searchPattern := fmt.Sprintf("%%%s%%", escapeLike(searchTerm))
+	explainAnalyze(db, ctx, osmLineSearchQuery, searchPattern, limit) // DEBUG
 
 	// Use db.DB() to bypass GORM parameter parsing and preserve ? operator
 	sqlDB, err := db.DB()
@@ -135,6 +166,7 @@ func searchRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit i
 
 func getAddressByRoadName(db *gorm.DB, ctx context.Context, searchTerm string, limit int) ([]*domain.LineWithAddress, error) {
 	searchPattern := fmt.Sprintf("%%%s%%", escapeLike(searchTerm))
+	explainAnalyze(db, ctx, osmLineWithAddressQuery, searchPattern, limit) // DEBUG
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
